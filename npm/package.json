@@ -1,6 +1,6 @@
 {
-  "name": "estella",
-  "version": "0.0.1",
+  "name": "estella-core",
+  "version": "0.0.2",
   "description": "Simple typescript multiplayer engine",
   "main": "lib/estella-core-server.js",
   "scripts": {
