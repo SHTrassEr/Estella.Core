@@ -26,7 +26,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="gulpfile.js" />
-    <Content Include="index.html" />
     <Content Include="lib\qunit-2.0.1\qunit-2.0.1.css" />
     <Content Include="lib\qunit-2.0.1\qunit-2.0.1.js" />
     <Content Include="tsconfig.json" />
@@ -39,9 +38,7 @@
     <TypeScriptCompile Include="src\Core\Entity\Impl\AttributeListArray.ts" />
     <TypeScriptCompile Include="src\Core\Entity\Impl\Entity.ts" />
     <TypeScriptCompile Include="src\Core\Entity\IEntity.ts" />
-    <TypeScriptCompile Include="src\Core\Entity\Impl\Vector.ts" />
     <TypeScriptCompile Include="src\Core\Entity\IterableKeyValuePair.ts" />
-    <TypeScriptCompile Include="src\Core\Entity\IVector.ts" />
     <TypeScriptCompile Include="src\Core\Events\IEventEntityFactory.ts" />
     <TypeScriptCompile Include="src\Core\Events\IEventEngine.ts" />
     <TypeScriptCompile Include="src\Core\Events\IEventEntityListService.ts" />
@@ -70,8 +67,6 @@
     <TypeScriptCompile Include="src\Core\Process\Service\Impl\ProcessListService.ts" />
     <TypeScriptCompile Include="src\Core\Service\IEntityFactory.ts" />
     <TypeScriptCompile Include="src\Core\Service\Impl\EntityFactory.ts" />
-    <TypeScriptCompile Include="src\Core\Util\MathHelper.ts" />
-    <TypeScriptCompile Include="src\Core\Util\VectorHelper.ts" />
     <TypeScriptCompile Include="src\Core\World\Impl\WorldAttributeList.ts" />
     <TypeScriptCompile Include="src\Core\World\IWorldAttributeList.ts" />
     <TypeScriptCompile Include="src\Core\ModuleInfo.ts" />
@@ -133,6 +128,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="src\Core\Client\Service\Impl\" />
+    <Folder Include="src\Core\Util\" />
     <Folder Include="src\Test\Core\Object\" />
   </ItemGroup>
   <PropertyGroup>
