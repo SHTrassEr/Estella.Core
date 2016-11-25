@@ -7,13 +7,13 @@
     "declaration": false,
     "sourceMap": false,
     "target": "es6",
-    "outDir": "./out/tmp"
+    "outFile": "../../out/tmp/estella-core/estella-core.js"
   },
-  "exclude": [
-    "npm",
-    "node_modules",
-    "wwwroot",
-    "bin",
-    "out"
+  "files": [
+    "../Core/ModuleInfo.ts"
+  ],
+  "include": [
+    "../Core/**/*"
   ]
+
 }

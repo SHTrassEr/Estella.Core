@@ -1,29 +1,31 @@
-﻿namespace Estella.Core {
+﻿namespace Estella.Core.Server {
 
     export class WebSocketClientListService implements IWebSocketClientListService {
 
-        protected entityFactory: IEntityFactory;
         private webSocketClientList: Map<number, IWebSocketClient>;
         private lastSocketClientId: number;
 
-        constructor(entityFactory: IEntityFactory) {
-            this.entityFactory = entityFactory;
+        constructor() {
             this.lastSocketClientId = 0;
             this.webSocketClientList = new Map<number, IWebSocketClient>();
         }
 
-        public addWebSocketClient(client: any): IWebSocketClient {
-            let newClientId = this.getNewSocketClientId();
-            let webSocketClient = new WebSocketClient(this.entityFactory, newClientId, client);
+        public remove(client: IWebSocketClient): void {
+            this.webSocketClientList.delete(client.getId());
+        }
+
+        public add(client: any): IWebSocketClient {
+            let newClientId = this.getNewClientId();
+            let webSocketClient = new WebSocketClient(newClientId, client);
             this.webSocketClientList.set(newClientId, webSocketClient);
             return webSocketClient;
         }
 
-        public getWebSocketClientListIterator(): IterableIterator<IWebSocketClient> {
+        public getIterator(): IterableIterator<IWebSocketClient> {
             return this.webSocketClientList.values();
         }
 
-        protected getNewSocketClientId(): number {
+        protected getNewClientId(): number {
             this.lastSocketClientId += 1;
             return this.lastSocketClientId;
         }

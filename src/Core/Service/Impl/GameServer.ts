@@ -12,7 +12,6 @@
         constructor(engine: IEngine) {
             this.engine = engine;
             var tickLength = engine.getWorld().getWorldAttributeList().getTickLength();
-            //let tickLength = 100;
             this.metronome = new Metronome(tickLength);
             this.commandLog = [];
             this.emptyCommandList = [];

@@ -1,4 +1,4 @@
-﻿namespace Estella.Core {
+﻿namespace Estella.Core.Server {
 
     export interface IWebSocketClient {
 
@@ -14,10 +14,10 @@
         setClientId(clientId: number): void;
 
         sendMessage(message: IClientServerMessage);
-        setOnMessage(handler: (client: IWebSocketClient, message: IClientServerMessage) => void): void;
-        setOnClose(handler: (client: IWebSocketClient) => void): void;
 
-        
         close();
+
+        clientMessage(): ILiteEvent<IEventWebSocketClient<any>>;
+        clientClose(): ILiteEvent<IEventWebSocketClient<any>>;
     }
 }

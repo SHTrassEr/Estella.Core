@@ -1,4 +1,4 @@
-﻿namespace Estella.Core {
+﻿namespace Estella.Core.Server {
 
     export enum WebSocketClientStatus {
         Initialization,

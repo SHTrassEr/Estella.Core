@@ -1,9 +1,8 @@
-﻿namespace Estella.Core {
+﻿namespace Estella.Core.Server {
 
     export interface IWebSocketServer  {
-        setOnClientConnected(handler: (webSocketClient: IWebSocketClient) => void): void;
-        setOnClientDisconnected(handler: (webSocketClient: IWebSocketClient) => void): void;
-        setOnClientMessage(handler: (webSocketClient: IWebSocketClient, message: IClientServerMessage) => void): void;
-        sendAll(message: IClientServerMessage): void;
+        clientConnected(): ILiteEvent<IEventWebSocketServer<IWebSocketClient>>;
+        clientMessage(): ILiteEvent<IEventWebSocketServer<IEventWebSocketClient<IClientServerMessage>>>;
+        clientClose(): ILiteEvent<IEventWebSocketServer<IEventWebSocketClient<any>>>;
     }
 }

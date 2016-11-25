@@ -72,10 +72,9 @@ namespace Estella.Core {
                     this.triggerEvent(this.onAfterRestore, entity, t, attr);
                     return <T><any>entity;
                 }
-            }
 
-            
-            throw new Error(JSON.stringify(attr));
+                throw new Error(JSON.stringify(attr));
+            }
         }
 
         public create<T extends IEntity>(t: typeof Entity): T {

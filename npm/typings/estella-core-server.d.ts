@@ -1,16 +1,12 @@
 declare namespace Estella.Core {
+    module ModuleInfo {
+        const name: string;
+    }
+}
+declare namespace Estella.Core {
     interface IClient extends IEntity {
         getName(): string;
         setName(name: string): void;
-    }
-}
-declare namespace Estella.Core {
-    interface IClientListService extends IEntityListService<IClient> {
-    }
-}
-declare namespace Estella.Core {
-    module ModuleInfo {
-        const name: string;
     }
 }
 declare namespace Estella.Core {
@@ -32,6 +28,47 @@ declare namespace Estella.Core {
     }
     module Entity {
         const type: string;
+    }
+}
+declare namespace Estella.Core {
+    class Client extends Entity implements IClient {
+        protected attributeList: IAttributeList;
+        protected attributeNameId: number;
+        getName(): string;
+        setName(name: string): void;
+    }
+    module Client {
+        const type: string;
+    }
+}
+declare namespace Estella.Core {
+    interface IClientListService extends IEntityListService<IClient> {
+    }
+}
+declare namespace Estella.Core {
+    interface ICommand extends IEntity {
+        getInitiatorId(): number;
+        setInitiatorId(id: number): void;
+    }
+}
+declare namespace Estella.Core {
+    interface ICommandDispatcher {
+        execute(command: ICommand): void;
+    }
+}
+declare namespace Estella.Core {
+    interface ICommandHandler {
+        execute(command: ICommand): void;
+        isValid(command: ICommand): boolean;
+    }
+}
+declare namespace Estella.Core {
+    interface ICommandListService extends IFilterable<ICommand> {
+        getCommandList(): ICommand[];
+        add(commahd: ICommand): void;
+        setCommandList(commandList: Iterable<ICommand>): void;
+        getCommandKeyValuePairList(): [number, any][][];
+        clear(): void;
     }
 }
 declare namespace Estella.Core {
@@ -77,6 +114,31 @@ declare namespace Estella.Core {
         clear(): void;
         getAll(condition: (item: ICommand) => boolean): IterableIterator<ICommand>;
         getFirst(condition: (item: ICommand) => boolean): ICommand;
+    }
+}
+declare namespace Estella.Core {
+    interface IAttributeList extends IterableKeyValuePair, ICommitable {
+        get(attribute: number, defaultValue?: any): any;
+        set(attribute: number, value: any): void;
+        clear(): void;
+        setList(attributeList: Iterable<[number, any]>, clear?: boolean): void;
+        has(attribute: number): boolean;
+        delete(attribute: number): void;
+    }
+}
+declare namespace Estella.Core {
+    interface IEntity extends IterableKeyValuePair {
+        getType(): string;
+        getId(): number;
+        setId(id: number): void;
+        getAttributeList(): IAttributeList;
+        setList(attributeList: Iterable<[number, any]>, clear?: boolean): void;
+    }
+}
+declare namespace Estella.Core {
+    interface IFilterable<T> {
+        getAll(condition: (item: T) => boolean): IterableIterator<T>;
+        getFirst(condition: (item: T) => boolean): T;
     }
 }
 declare namespace Estella.Core {
@@ -136,6 +198,32 @@ declare namespace Estella.Core {
     }
 }
 declare namespace Estella.Core {
+    interface IterableKeyValuePair extends Iterable<[number, any]> {
+        getList(): [number, any][];
+        getIterator(): IterableIterator<[number, any]>;
+    }
+}
+declare namespace Estella.Core {
+    interface IEventEngine {
+        getSource(): IEngine;
+        getStep(): number;
+    }
+}
+declare namespace Estella.Core {
+    interface IEventEntityFactory {
+        getSource(): IEntityFactory;
+        getEntity(): IEntity;
+        getType(): typeof Entity;
+        getAttr(): Iterable<[number, any]>;
+    }
+}
+declare namespace Estella.Core {
+    interface IEventEntityListService<T extends IEntity> {
+        getSource(): IEntityListService<T>;
+        getEntity(): T;
+    }
+}
+declare namespace Estella.Core {
     class EventEngine implements IEventEngine {
         protected engine: IEngine;
         protected step: number;
@@ -167,10 +255,33 @@ declare namespace Estella.Core {
     }
 }
 declare namespace Estella.Core {
+    class BaseException {
+        private message;
+        constructor(message?: string);
+        getMessage(): string;
+    }
+}
+declare namespace Estella.Core {
+    class NotImplementedException {
+    }
+}
+declare namespace Estella.Core {
+    interface IItem extends IEntity {
+    }
+}
+declare namespace Estella.Core {
+    interface IItemListService extends IEntityListService<IItem> {
+    }
+}
+declare namespace Estella.Core {
     class Item extends Entity implements IItem {
     }
     module Item {
         const type: string;
+    }
+}
+declare namespace Estella.Core {
+    interface IClientServerMessage extends IEntity {
     }
 }
 declare namespace Estella.Core {
@@ -261,6 +372,22 @@ declare namespace Estella.Core {
     }
 }
 declare namespace Estella.Core {
+    class Process extends Entity implements IProcess {
+        private _processStatus;
+        private _initStep;
+        private _finishStep;
+        getStatus(): ProcessStatus;
+        setStatus(processStatus: ProcessStatus): void;
+        getInitStep(): number;
+        setInitStep(initStep: number): void;
+        getFinishStep(): number;
+        setFinishStep(finishStep: number): void;
+    }
+    module Process {
+        const type: string;
+    }
+}
+declare namespace Estella.Core {
     interface IProcess extends IEntity {
         getInitStep(): number;
         setInitStep(initStep: number): void;
@@ -269,6 +396,82 @@ declare namespace Estella.Core {
         getStatus(): ProcessStatus;
         setStatus(processStatus: ProcessStatus): void;
         getAttributeList(): IAttributeList;
+    }
+}
+declare namespace Estella.Core {
+    enum ProcessStatus {
+        Unknown = 0,
+        Init = 1,
+        Executing = 2,
+        Finished = 3,
+    }
+}
+declare namespace Estella.Core {
+    enum ProcessType {
+        Unknown = 0,
+    }
+}
+declare namespace Estella.Core {
+    class ProcessDispatcher implements IProcessDispatcher {
+        protected processHandlerList: Map<string, IProcessHandler>;
+        execute(process: IProcess): void;
+        init(process: IProcess): void;
+        finish(process: IProcess): void;
+        protected getHandler(process: IProcess): IProcessHandler;
+    }
+}
+declare namespace Estella.Core {
+    class ProcessHandler implements IProcessHandler {
+        protected world: IWorld;
+        constructor(world: IWorld);
+        init(process: IProcess): void;
+        execute(process: IProcess): void;
+        finish(process: IProcess): void;
+        protected setInitStep(process: IProcess): void;
+        protected setFinishStep(process: IProcess): void;
+        protected initProcess(process: IProcess): void;
+        protected executeProcess(process: IProcess): void;
+        protected finishProcess(process: IProcess): void;
+        protected isValidProcessType(command: IProcess): boolean;
+        protected startProcess(process: IProcess): void;
+    }
+}
+declare namespace Estella.Core {
+    class ProcessListService implements IProcessListService {
+        protected processList: IProcess[];
+        protected filterService: IFilterService<IProcess>;
+        constructor();
+        init(processList: Iterable<IProcess>): void;
+        getProcessList(): IProcess[];
+        add(process: IProcess): void;
+        removeFinished(): void;
+        clear(): void;
+        getIterator(): IterableIterator<IProcess>;
+        getList(): [number, any][][];
+        setList(entityList: Iterable<IProcess>, clear?: boolean): void;
+        getAll(condition: (item: IProcess) => boolean): IterableIterator<IProcess>;
+        getFirst(condition: (item: IProcess) => boolean): IProcess;
+    }
+}
+declare namespace Estella.Core {
+    class ProcessListServiceCommitable implements IProcessListService, ICommitable {
+        protected processList: IProcess[];
+        protected filterService: IFilterService<IProcess>;
+        protected firstUncommitedIndex: number;
+        constructor();
+        getProcessList(): IProcess[];
+        add(process: IProcess): void;
+        init(processList: Iterable<IProcess>): void;
+        removeFinished(): void;
+        clear(): void;
+        getIterator(): IterableIterator<IProcess>;
+        getList(): [number, any][][];
+        setList(processList: Iterable<IProcess>, clear?: boolean): void;
+        commit(): void;
+        rollback(): void;
+        isDirty(): boolean;
+        getAll(condition: (item: IProcess) => boolean): IterableIterator<IProcess>;
+        getFirst(condition: (item: IProcess) => boolean): IProcess;
     }
 }
 declare namespace Estella.Core {
@@ -295,6 +498,95 @@ declare namespace Estella.Core {
         getIterator(): IterableIterator<IProcess>;
         getList(): [number, any][][];
         setList(object: Iterable<IProcess>, clear?: boolean): void;
+    }
+}
+declare namespace Estella.Core {
+    interface ICommitable {
+        commit(): void;
+        rollback(): void;
+        isDirty(): boolean;
+    }
+}
+declare namespace Estella.Core {
+    interface IEngine {
+        getWorld(): IWorld;
+        getCommandListService(): ICommandListService;
+        getStep(): number;
+        update(): void;
+        getCommandList(): ICommand[];
+        beforeUpdate(): ILiteEvent<IEventEngine>;
+        afterUpdate(): ILiteEvent<IEventEngine>;
+    }
+}
+declare namespace Estella.Core {
+    interface IEntityFactory {
+        set(t: typeof Entity): void;
+        has(t: typeof Entity | string): boolean;
+        delete(t: typeof Entity | string): void;
+        create<T extends IEntity>(e: typeof Entity): T;
+        restore<T extends IEntity>(attr: Iterable<[number, any]>, baseClass: typeof Entity): T;
+        restoreList<T extends IEntity>(attrList: Iterable<Iterable<[number, any]>>, baseClass: typeof Entity): Iterable<T>;
+        beforeCreate(): ILiteEvent<IEventEntityFactory>;
+        afterCreate(): ILiteEvent<IEventEntityFactory>;
+        beforeRestore(): ILiteEvent<IEventEntityFactory>;
+        afterRestore(): ILiteEvent<IEventEntityFactory>;
+        beforeInit(): ILiteEvent<IEventEntityFactory>;
+        afterInit(): ILiteEvent<IEventEntityFactory>;
+    }
+}
+declare namespace Estella.Core {
+    interface IEntityListService<T extends IEntity> extends IFilterable<T> {
+        init(objectList: Iterable<T>): void;
+        get(id: number): T;
+        has(id: number): boolean;
+        getSize(): number;
+        add(object: T): void;
+        remove(id: number): void;
+        clear(): void;
+        getIterator(): IterableIterator<T>;
+        serialize(): [number, any][][];
+        setList(object: Iterable<T>, clear?: boolean): void;
+        getTyped<V extends T>(objectId: number, type: any): V;
+        beforeAdd(): ILiteEvent<IEventEntityListService<T>>;
+        afterAdd(): ILiteEvent<IEventEntityListService<T>>;
+        beforeRemove(): ILiteEvent<IEventEntityListService<T>>;
+        afterRemove(): ILiteEvent<IEventEntityListService<T>>;
+        beforeClear(): ILiteEvent<IEventEntityListService<T>>;
+        afterClear(): ILiteEvent<IEventEntityListService<T>>;
+    }
+}
+declare namespace Estella.Core {
+    interface IFilterService<T> {
+        getAll(itemList: Iterable<T>, condition: (item: T) => boolean): IterableIterator<T>;
+        getFirst(itemList: Iterable<T>, condition: (item: T) => boolean): T;
+    }
+}
+declare namespace Estella.Core {
+    interface IGameServer {
+        start(): void;
+        getCommandLog(startStepNumber: number): ICommand[][];
+        setOnUpdateWorld(handler: (world: IWorld, currentStepNumber: number, commandList: ICommand[]) => void): void;
+    }
+}
+declare namespace Estella.Core {
+    interface ILiteEvent<V> {
+        on(handler: {
+            (data?: V): void;
+        }): void;
+        off(handler: {
+            (data?: V): void;
+        }): void;
+        getCount(): number;
+    }
+}
+declare namespace Estella.Core {
+    interface IMetronome {
+        start(startTime?: number): void;
+        getStartTime(): number;
+        pause(): void;
+        resume(): void;
+        getTickLength(): number;
+        getTickCount(): number;
     }
 }
 declare namespace Estella.Core {
@@ -467,6 +759,11 @@ declare namespace Estella.Core {
     }
 }
 declare namespace Estella.Core {
+    class ServiceAttributeType {
+        static LastId: string;
+    }
+}
+declare namespace Estella.Core {
     abstract class World implements IWorld {
         protected worldAttributeList: IWorldAttributeList;
         protected itemListService: IItemListService;
@@ -509,303 +806,6 @@ declare namespace Estella.Core {
     }
 }
 declare namespace Estella.Core {
-    class Client extends Entity implements IClient {
-        protected attributeList: IAttributeList;
-        protected attributeNameId: number;
-        getName(): string;
-        setName(name: string): void;
-    }
-    module Client {
-        const type: string;
-    }
-}
-declare namespace Estella.Core {
-    class Process extends Entity implements IProcess {
-        private _processStatus;
-        private _initStep;
-        private _finishStep;
-        getStatus(): ProcessStatus;
-        setStatus(processStatus: ProcessStatus): void;
-        getInitStep(): number;
-        setInitStep(initStep: number): void;
-        getFinishStep(): number;
-        setFinishStep(finishStep: number): void;
-    }
-    module Process {
-        const type: string;
-    }
-}
-declare namespace Estella.Core {
-    class ProcessDispatcher implements IProcessDispatcher {
-        protected processHandlerList: Map<string, IProcessHandler>;
-        execute(process: IProcess): void;
-        init(process: IProcess): void;
-        finish(process: IProcess): void;
-        protected getHandler(process: IProcess): IProcessHandler;
-    }
-}
-declare namespace Estella.Core {
-    class ProcessHandler implements IProcessHandler {
-        protected world: IWorld;
-        constructor(world: IWorld);
-        init(process: IProcess): void;
-        execute(process: IProcess): void;
-        finish(process: IProcess): void;
-        protected setInitStep(process: IProcess): void;
-        protected setFinishStep(process: IProcess): void;
-        protected initProcess(process: IProcess): void;
-        protected executeProcess(process: IProcess): void;
-        protected finishProcess(process: IProcess): void;
-        protected isValidProcessType(command: IProcess): boolean;
-        protected startProcess(process: IProcess): void;
-    }
-}
-declare namespace Estella.Core {
-    class ProcessListService implements IProcessListService {
-        protected processList: IProcess[];
-        protected filterService: IFilterService<IProcess>;
-        constructor();
-        init(processList: Iterable<IProcess>): void;
-        getProcessList(): IProcess[];
-        add(process: IProcess): void;
-        removeFinished(): void;
-        clear(): void;
-        getIterator(): IterableIterator<IProcess>;
-        getList(): [number, any][][];
-        setList(entityList: Iterable<IProcess>, clear?: boolean): void;
-        getAll(condition: (item: IProcess) => boolean): IterableIterator<IProcess>;
-        getFirst(condition: (item: IProcess) => boolean): IProcess;
-    }
-}
-declare namespace Estella.Core {
-    class ProcessListServiceCommitable implements IProcessListService, ICommitable {
-        protected processList: IProcess[];
-        protected filterService: IFilterService<IProcess>;
-        protected firstUncommitedIndex: number;
-        constructor();
-        getProcessList(): IProcess[];
-        add(process: IProcess): void;
-        init(processList: Iterable<IProcess>): void;
-        removeFinished(): void;
-        clear(): void;
-        getIterator(): IterableIterator<IProcess>;
-        getList(): [number, any][][];
-        setList(processList: Iterable<IProcess>, clear?: boolean): void;
-        commit(): void;
-        rollback(): void;
-        isDirty(): boolean;
-        getAll(condition: (item: IProcess) => boolean): IterableIterator<IProcess>;
-        getFirst(condition: (item: IProcess) => boolean): IProcess;
-    }
-}
-declare namespace Estella.Core {
-    interface ICommand extends IEntity {
-        getInitiatorId(): number;
-        setInitiatorId(id: number): void;
-    }
-}
-declare namespace Estella.Core {
-    interface ICommandDispatcher {
-        execute(command: ICommand): void;
-    }
-}
-declare namespace Estella.Core {
-    interface ICommandHandler {
-        execute(command: ICommand): void;
-        isValid(command: ICommand): boolean;
-    }
-}
-declare namespace Estella.Core {
-    interface ICommandListService extends IFilterable<ICommand> {
-        getCommandList(): ICommand[];
-        add(commahd: ICommand): void;
-        setCommandList(commandList: Iterable<ICommand>): void;
-        getCommandKeyValuePairList(): [number, any][][];
-        clear(): void;
-    }
-}
-declare namespace Estella.Core {
-    interface IAttributeList extends IterableKeyValuePair, ICommitable {
-        get(attribute: number, defaultValue?: any): any;
-        set(attribute: number, value: any): void;
-        clear(): void;
-        setList(attributeList: Iterable<[number, any]>, clear?: boolean): void;
-        has(attribute: number): boolean;
-        delete(attribute: number): void;
-    }
-}
-declare namespace Estella.Core {
-    interface IEntity extends IterableKeyValuePair {
-        getType(): string;
-        getId(): number;
-        setId(id: number): void;
-        getAttributeList(): IAttributeList;
-        setList(attributeList: Iterable<[number, any]>, clear?: boolean): void;
-    }
-}
-declare namespace Estella.Core {
-    interface IFilterable<T> {
-        getAll(condition: (item: T) => boolean): IterableIterator<T>;
-        getFirst(condition: (item: T) => boolean): T;
-    }
-}
-declare namespace Estella.Core {
-    interface IterableKeyValuePair extends Iterable<[number, any]> {
-        getList(): [number, any][];
-        getIterator(): IterableIterator<[number, any]>;
-    }
-}
-declare namespace Estella.Core {
-    interface IEventEngine {
-        getSource(): IEngine;
-        getStep(): number;
-    }
-}
-declare namespace Estella.Core {
-    interface IEventEntityFactory {
-        getSource(): IEntityFactory;
-        getEntity(): IEntity;
-        getType(): typeof Entity;
-        getAttr(): Iterable<[number, any]>;
-    }
-}
-declare namespace Estella.Core {
-    interface IEventEntityListService<T extends IEntity> {
-        getSource(): IEntityListService<T>;
-        getEntity(): T;
-    }
-}
-declare namespace Estella.Core {
-    class BaseException {
-        private message;
-        constructor(message?: string);
-        getMessage(): string;
-    }
-}
-declare namespace Estella.Core {
-    class NotImplementedException {
-    }
-}
-declare namespace Estella.Core {
-    interface IItem extends IEntity {
-    }
-}
-declare namespace Estella.Core {
-    interface IItemListService extends IEntityListService<IItem> {
-    }
-}
-declare namespace Estella.Core {
-    interface IClientServerMessage extends IEntity {
-    }
-}
-declare namespace Estella.Core {
-    enum ProcessStatus {
-        Unknown = 0,
-        Init = 1,
-        Executing = 2,
-        Finished = 3,
-    }
-}
-declare namespace Estella.Core {
-    enum ProcessType {
-        Unknown = 0,
-    }
-}
-declare namespace Estella.Core {
-    interface ICommitable {
-        commit(): void;
-        rollback(): void;
-        isDirty(): boolean;
-    }
-}
-declare namespace Estella.Core {
-    interface IEngine {
-        getWorld(): IWorld;
-        getCommandListService(): ICommandListService;
-        getStep(): number;
-        update(): void;
-        getCommandList(): ICommand[];
-        beforeUpdate(): ILiteEvent<IEventEngine>;
-        afterUpdate(): ILiteEvent<IEventEngine>;
-    }
-}
-declare namespace Estella.Core {
-    interface IEntityFactory {
-        set(t: typeof Entity): void;
-        has(t: typeof Entity | string): boolean;
-        delete(t: typeof Entity | string): void;
-        create<T extends IEntity>(e: typeof Entity): T;
-        restore<T extends IEntity>(attr: Iterable<[number, any]>, baseClass: typeof Entity): T;
-        restoreList<T extends IEntity>(attrList: Iterable<Iterable<[number, any]>>, baseClass: typeof Entity): Iterable<T>;
-        beforeCreate(): ILiteEvent<IEventEntityFactory>;
-        afterCreate(): ILiteEvent<IEventEntityFactory>;
-        beforeRestore(): ILiteEvent<IEventEntityFactory>;
-        afterRestore(): ILiteEvent<IEventEntityFactory>;
-        beforeInit(): ILiteEvent<IEventEntityFactory>;
-        afterInit(): ILiteEvent<IEventEntityFactory>;
-    }
-}
-declare namespace Estella.Core {
-    interface IEntityListService<T extends IEntity> extends IFilterable<T> {
-        init(objectList: Iterable<T>): void;
-        get(id: number): T;
-        has(id: number): boolean;
-        getSize(): number;
-        add(object: T): void;
-        remove(id: number): void;
-        clear(): void;
-        getIterator(): IterableIterator<T>;
-        serialize(): [number, any][][];
-        setList(object: Iterable<T>, clear?: boolean): void;
-        getTyped<V extends T>(objectId: number, type: any): V;
-        beforeAdd(): ILiteEvent<IEventEntityListService<T>>;
-        afterAdd(): ILiteEvent<IEventEntityListService<T>>;
-        beforeRemove(): ILiteEvent<IEventEntityListService<T>>;
-        afterRemove(): ILiteEvent<IEventEntityListService<T>>;
-        beforeClear(): ILiteEvent<IEventEntityListService<T>>;
-        afterClear(): ILiteEvent<IEventEntityListService<T>>;
-    }
-}
-declare namespace Estella.Core {
-    interface IFilterService<T> {
-        getAll(itemList: Iterable<T>, condition: (item: T) => boolean): IterableIterator<T>;
-        getFirst(itemList: Iterable<T>, condition: (item: T) => boolean): T;
-    }
-}
-declare namespace Estella.Core {
-    interface IGameServer {
-        start(): void;
-        getCommandLog(startStepNumber: number): ICommand[][];
-        setOnUpdateWorld(handler: (world: IWorld, currentStepNumber: number, commandList: ICommand[]) => void): void;
-    }
-}
-declare namespace Estella.Core {
-    interface ILiteEvent<V> {
-        on(handler: {
-            (data?: V): void;
-        }): void;
-        off(handler: {
-            (data?: V): void;
-        }): void;
-        getCount(): number;
-    }
-}
-declare namespace Estella.Core {
-    interface IMetronome {
-        start(startTime?: number): void;
-        getStartTime(): number;
-        pause(): void;
-        resume(): void;
-        getTickLength(): number;
-        getTickCount(): number;
-    }
-}
-declare namespace Estella.Core {
-    class ServiceAttributeType {
-        static LastId: string;
-    }
-}
-declare namespace Estella.Core {
     interface IWorld {
         getWorldAttributeList(): IWorldAttributeList;
         getProcessDispatcher(): IProcessDispatcher;
@@ -828,7 +828,37 @@ declare namespace Estella.Core {
         setStepNumber(stepNumber: number): void;
     }
 }
-declare namespace Estella.Core {
+declare namespace Estella.Core.Server {
+    class WebSocketClient implements IWebSocketClient {
+        protected id: number;
+        protected clientId: number;
+        protected status: WebSocketClientStatus;
+        protected client: any;
+        protected sid: string;
+        protected entityFactory: IEntityFactory;
+        constructor(entityFactory: IEntityFactory, id: number, client: WebSocket);
+        protected init(): void;
+        protected onSocketMessage(ev: any): void;
+        protected onSocketClose(ev: any): void;
+        protected processMessage(attr: Iterable<[number, any]>): void;
+        getId(): number;
+        getStatus(): WebSocketClientStatus;
+        setStatus(status: WebSocketClientStatus): void;
+        getSID(): string;
+        setSID(sid: string): void;
+        getClientId(): number;
+        setClientId(clientId: number): void;
+        close(): void;
+        sendMessage(attr: IClientServerMessage): void;
+        private onAfterMessage;
+        private onBeforeClose;
+        private onAfterClose;
+        afterMessage(): ILiteEvent<IEventWebSocketClientMessage>;
+        beforeClose(): ILiteEvent<IEventWebSocketClientClose>;
+        afterClose(): ILiteEvent<IEventWebSocketClientClose>;
+    }
+}
+declare namespace Estella.Core.Server {
     interface IWebSocketClient {
         getId(): number;
         getStatus(): WebSocketClientStatus;
@@ -838,66 +868,52 @@ declare namespace Estella.Core {
         getClientId(): number;
         setClientId(clientId: number): void;
         sendMessage(message: IClientServerMessage): any;
-        setOnMessage(handler: (client: IWebSocketClient, message: IClientServerMessage) => void): void;
-        setOnClose(handler: (client: IWebSocketClient) => void): void;
         close(): any;
+        afterMessage(): ILiteEvent<IEventWebSocketClientMessage>;
+        beforeClose(): ILiteEvent<IEventWebSocketClientClose>;
+        afterClose(): ILiteEvent<IEventWebSocketClientClose>;
     }
 }
-declare namespace Estella.Core {
+declare namespace Estella.Core.Server {
     enum WebSocketClientStatus {
         Initialization = 0,
         Connected = 1,
         Disconnected = 2,
     }
 }
-declare namespace Estella.Core {
-    interface IWebSocketClientListService {
-        addWebSocketClient(client: any): IWebSocketClient;
-        getWebSocketClientListIterator(): IterableIterator<IWebSocketClient>;
+declare namespace Estella.Core.Server {
+    interface IEventWebSocketClientClose {
+        getSource(): IWebSocketClient;
     }
 }
-declare namespace Estella.Core {
-    interface IWebSocketGameServer {
-        start(): void;
+declare namespace Estella.Core.Server {
+    interface IEventWebSocketClientMessage {
+        getSource(): IWebSocketClient;
+        getMessage(): IClientServerMessage;
     }
 }
-declare namespace Estella.Core {
-    interface IWebSocketServer {
-        setOnClientConnected(handler: (webSocketClient: IWebSocketClient) => void): void;
-        setOnClientDisconnected(handler: (webSocketClient: IWebSocketClient) => void): void;
-        setOnClientMessage(handler: (webSocketClient: IWebSocketClient, message: IClientServerMessage) => void): void;
-        sendAll(message: IClientServerMessage): void;
+declare namespace Estella.Core.Server {
+    class EventWebSocketClientClose implements IEventWebSocketClientClose {
+        protected webSocketClient: IWebSocketClient;
+        protected data: any;
+        constructor(webSocketClient: IWebSocketClient, data: any);
+        getSource(): IWebSocketClient;
+        getData(): IClientServerMessage;
     }
 }
-declare namespace Estella.Core {
-    class WebSocketClient implements IWebSocketClient {
-        protected id: number;
-        protected clientId: number;
-        protected status: WebSocketClientStatus;
-        protected client: any;
-        protected sid: string;
-        protected onMessageHandler: (client: IWebSocketClient, message: IClientServerMessage) => void;
-        protected onCloseHandler: (client: IWebSocketClient) => void;
-        protected entityFactory: IEntityFactory;
-        constructor(entityFactory: IEntityFactory, id: number, client: any);
-        protected init(): void;
-        protected onMessage(message: any): void;
-        protected processMessage(attr: Iterable<[number, any]>): void;
-        protected onClose(): void;
-        getId(): number;
-        getStatus(): WebSocketClientStatus;
-        setStatus(status: WebSocketClientStatus): void;
-        getSID(): string;
-        setSID(sid: string): void;
-        getClientId(): number;
-        setClientId(clientId: number): void;
-        sendMessage(attr: IClientServerMessage): void;
-        setOnMessage(handler: (client: IWebSocketClient, message: IClientServerMessage) => void): void;
-        setOnClose(handler: (client: IWebSocketClient) => void): void;
-        close(): void;
+declare namespace Estella.Core.Server {
+    class EventWebSocketClientMessage implements IEventWebSocketClientMessage {
+        protected webSocketClient: IWebSocketClient;
+        protected message: IClientServerMessage;
+        constructor(webSocketClient: IWebSocketClient, message: IClientServerMessage);
+        getSource(): IWebSocketClient;
+        getMessage(): IClientServerMessage;
     }
 }
-declare namespace Estella.Core {
+declare module 'estella-core' {
+    export default Estella;
+}
+declare namespace Estella.Core.Server {
     class WebSocketClientListService implements IWebSocketClientListService {
         protected entityFactory: IEntityFactory;
         private webSocketClientList;
@@ -909,7 +925,7 @@ declare namespace Estella.Core {
         close(): void;
     }
 }
-declare namespace Estella.Core {
+declare namespace Estella.Core.Server {
     abstract class WebSocketGameServer implements IWebSocketGameServer {
         protected webSocketServer: IWebSocketServer;
         protected gameServer: IGameServer;
@@ -926,7 +942,7 @@ declare namespace Estella.Core {
         start(): void;
     }
 }
-declare namespace Estella.Core {
+declare namespace Estella.Core.Server {
     class WebSocketServer implements IWebSocketServer {
         private server;
         protected webSocketClientListService: IWebSocketClientListService;
@@ -942,12 +958,29 @@ declare namespace Estella.Core {
         setOnClientDisconnected(handler: (webSocketClient: IWebSocketClient) => void): void;
         protected onConnection(client: any): void;
         protected initWebSocketClient(webSocketClient: IWebSocketClient): void;
-        protected onClientMessage(webSocketClient: IWebSocketClient, message: IClientServerMessage): void;
+        protected onClientMessage(ev: IEventWebSocketClientMessage): void;
         protected onClientDisconnected(webSocketClient: IWebSocketClient): void;
         protected doAuthentication(webSocketClient: IWebSocketClient, message: ClientServerMessageResponseAuthentication): void;
-        protected onClientConnected(webSocketClient: IWebSocketClient): void;
+        protected onClientConnected(ev: IEventWebSocketClientMessage): void;
         close(): void;
     }
 }
-
-declare module 'estella-core' { export default Estella; }
+declare namespace Estella.Core.Server {
+    interface IWebSocketClientListService {
+        addWebSocketClient(client: any): IWebSocketClient;
+        getWebSocketClientListIterator(): IterableIterator<IWebSocketClient>;
+    }
+}
+declare namespace Estella.Core.Server {
+    interface IWebSocketGameServer {
+        start(): void;
+    }
+}
+declare namespace Estella.Core.Server {
+    interface IWebSocketServer {
+        setOnClientConnected(handler: (webSocketClient: IWebSocketClient) => void): void;
+        setOnClientDisconnected(handler: (webSocketClient: IWebSocketClient) => void): void;
+        setOnClientMessage(handler: (webSocketClient: IWebSocketClient, message: IClientServerMessage) => void): void;
+        sendAll(message: IClientServerMessage): void;
+    }
+}

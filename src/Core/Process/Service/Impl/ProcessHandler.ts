@@ -1,15 +1,18 @@
-﻿namespace Estella.Core {
+﻿/// <reference path="../../../Service/Impl/EntityHandler.ts" />
 
-    export class ProcessHandler implements IProcessHandler {
+namespace Estella.Core {
+
+    export class ProcessHandler extends EntityHandler<IProcess> implements IProcessHandler {
 
         protected world: IWorld;
 
         constructor(world: IWorld) {
+            super();
             this.world = world;
         }
 
         public init(process: IProcess): void {
-            if (this.isValidProcessType(process)) {
+            if (this.isValid(process)) {
                 this.initProcess(process);
 
                 this.setInitStep(process);
@@ -22,14 +25,8 @@
             }
         }
 
-        public execute(process: IProcess): void {
-            if (this.isValidProcessType(process)) {
-                this.executeProcess(process);
-            }
-        }
-
         public finish(process: IProcess): void {
-            if (this.isValidProcessType(process)) {
+            if (this.isValid(process)) {
                 this.finishProcess(process);
                 process.setStatus(ProcessStatus.Finished);
                 this.setFinishStep(process);
@@ -48,16 +45,8 @@
 
         }
 
-        protected executeProcess(process: IProcess): void {
-
-        }
-
         protected finishProcess(process: IProcess): void {
 
-        }
-
-        protected isValidProcessType(command: IProcess): boolean {
-            return true;
         }
 
         protected startProcess(process: IProcess): void {

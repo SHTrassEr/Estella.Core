@@ -1,92 +1,35 @@
 ﻿/// <binding />
-var gulp = require('gulp');
-var ts = require('gulp-typescript');
-var merge = require('merge2');
-var insert = require('gulp-insert');
-
-var nodeJsModuleDeclaration = '\ndeclare module \'estella-core\' { export default Estella; }';
-var useStrict = '\'use strict\';\n';
+let gulp = require('gulp');
+let ts = require('gulp-typescript');
+let merge = require('merge2');
 
 
-var srcCorePath = 'src/Core/**/*.ts';
-var srcServerPath = 'src/Server/**/*.ts';
-var srcClientPath = 'src/Client/**/*.ts';
-var srcTestPath = 'src/Test/**/*.ts';
-var libPath = 'lib/**/*.d.ts';
-
-var outLibPath = 'out/estella-core/lib';
-var outTestsPath = 'out/estella-core/test';
-var outTypingsPath = 'out/estella-core/typings';
-
-
-gulp.task('build-server', function () {
-    var tsResult = gulp.src([libPath, srcCorePath, srcServerPath])
-        .pipe(ts({
-            declaration: true,
-            removeComments: true,
-            target: 'es6',
-            outFile: 'estella-core-server.js'
-        }));
+gulp.task("build-client", function () {
+    let tsProjectClient = ts.createProject("src/Client/tsconfig.json");
+    let tsResult = tsProjectClient.src()
+        .pipe(tsProjectClient())
 
     return merge([
-        tsResult.js.pipe(insert.prepend(useStrict)).pipe(gulp.dest(outLibPath)),
-        tsResult.dts.pipe(insert.append(nodeJsModuleDeclaration)).pipe(gulp.dest(outTypingsPath))
+        tsResult.js.pipe(gulp.dest('./')),
+        tsResult.dts.pipe(gulp.dest('./'))
+    ]);
+});
+
+gulp.task("build-server", function () {
+    let tsProjectServer = ts.createProject("src/Server/tsconfig.json");
+    let tsResult = tsProjectServer.src()
+        .pipe(tsProjectServer())
+
+    return merge([
+        tsResult.js.pipe(gulp.dest('./')),
+        tsResult.dts.pipe(gulp.dest('./'))
     ]);
 });
 
 
-gulp.task('build-client', function () {
-    var tsResult = gulp.src([libPath, srcCorePath, srcClientPath])
-        .pipe(ts({
-            declaration: true,
-            removeComments: true,
-            target: 'es6',
-            outFile: 'estella-core-client.js'
-        }));
-
+gulp.task('build-npm', ['build-server', 'build-client'], function () {
     return merge([
-        tsResult.js.pipe(insert.prepend(useStrict)).pipe(gulp.dest(outLibPath)),
-        tsResult.dts.pipe(gulp.dest(outTypingsPath))
+        gulp.src('out/estella-core/*.js').pipe(gulp.dest('npm/lib')),
+        gulp.src('out/estella-core/*.d.ts').pipe(gulp.dest('npm/typings'))
     ]);
 });
-
-gulp.task('build-full', function () {
-    var tsResult = gulp.src([libPath, srcCorePath, srcServerPath, srcClientPath])
-        .pipe(ts({
-            declaration: true,
-            removeComments: true,
-            target: 'es6',
-            outFile: 'estella-core-full.js'
-        }));
-
-    return merge([
-        tsResult.dts.pipe(gulp.dest(outTypingsPath))
-    ]);
-});
-
-
-gulp.task('build-test', function () {
-    var tsResult = gulp.src([libPath, srcCorePath, srcTestPath])
-        .pipe(ts({
-            declaration: false,
-            removeComments: true,
-            target: 'es6',
-            outFile: 'estella-core-test.js'
-        }));
-
-    return merge([
-        tsResult.js.pipe(insert.prepend(useStrict)).pipe(gulp.dest(outTestsPath))
-    ]);
-});
-
-
-gulp.task('copy-npm', ['build-server', 'build-client', 'build-full', 'build-test'], function () {
-    return merge([
-        gulp.src('out/estella-core/**/*').pipe(gulp.dest('npm'))
-    ]);
-});
-
-
-
-gulp.task('build-all', ['build-server', 'build-client', 'build-full', 'build-test']);
-

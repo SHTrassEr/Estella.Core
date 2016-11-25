@@ -1,8 +1,9 @@
-﻿namespace Estella.Core {
+﻿namespace Estella.Core.Server {
 
     export interface IWebSocketClientListService  {
-        addWebSocketClient(client: any): IWebSocketClient;
-        getWebSocketClientListIterator(): IterableIterator<IWebSocketClient>;
+        remove(client: IWebSocketClient): void;
+        add(client: any): IWebSocketClient;
+        getIterator(): IterableIterator<IWebSocketClient>;
 
     }
 }

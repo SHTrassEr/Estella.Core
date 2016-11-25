@@ -1,14 +1,14 @@
-﻿namespace Estella.Core {
+﻿/// <reference path="../../../Service/Impl/EntityDispatcher.ts" />
 
-    export class ProcessDispatcher implements IProcessDispatcher {
+namespace Estella.Core {
 
-        protected processHandlerList: Map<string, IProcessHandler> = new Map<string, IProcessHandler> ();
+    export class ProcessDispatcher extends EntityDispatcher<IProcess, IProcessHandler> implements IProcessDispatcher {
 
-        public execute(process: IProcess): void {
+        public process(process: IProcess): void {
             let processStatus = process.getStatus();
             if (processStatus === ProcessStatus.Executing) {
                 let handler = this.getHandler(process);
-                handler.execute(process);
+                handler.process(process);
             }
         }
 
@@ -26,15 +26,6 @@
                 let handler = this.getHandler(process);
                 handler.finish(process);
             }
-        }
-
-        protected getHandler(process: IProcess): IProcessHandler {
-            let handler = this.processHandlerList.get(process.getType());
-            if (handler) {
-                return handler;
-            }
-
-            throw new Error();
         }
     }
 }

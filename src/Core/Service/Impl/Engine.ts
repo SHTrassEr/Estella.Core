@@ -32,7 +32,7 @@
             this.processCommandList();
             for (let i = 0; i < this.processListService.getProcessList().length; i++) {
                 let process = this.processListService.getProcessList()[i];
-                this.processDispatcher.execute(process);
+                this.processDispatcher.process(process);
             }
 
             this.processListService.removeFinished();
@@ -55,7 +55,7 @@
         protected processCommandList() : void {
             let commandList = this.commandListService.getCommandList();
             for (let command of commandList) {
-                this.commandDispatcher.execute(command);
+                this.commandDispatcher.process(command);
             }
             this.commandListService.clear();
         }

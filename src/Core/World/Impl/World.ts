@@ -15,6 +15,7 @@
         }
 
         protected initEntityFactory(entityFactory: IEntityFactory) {
+            entityFactory.set(ClientServerMessageConnect);
             entityFactory.set(ClientServerMessageCommandList);
             entityFactory.set(ClientServerMessageInit);
             entityFactory.set(ClientServerMessageRequestAuthentication);

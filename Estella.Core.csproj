@@ -28,36 +28,49 @@
     <Content Include="gulpfile.js" />
     <Content Include="lib\qunit-2.0.1\qunit-2.0.1.css" />
     <Content Include="lib\qunit-2.0.1\qunit-2.0.1.js" />
-    <Content Include="tsconfig.json" />
+    <Content Include="src\Client\tsconfig.json" />
     <TypeScriptCompile Include="lib\typings\qunit.d.ts" />
+    <TypeScriptCompile Include="lib\typings\ws.d.ts" />
     <TypeScriptCompile Include="src\Client\View\Impl\View.ts" />
     <TypeScriptCompile Include="src\Client\View\IView.ts" />
-    <TypeScriptCompile Include="src\Core\Command\Impl\CommandHandler.ts" />
-    <TypeScriptCompile Include="src\Core\Command\Impl\CommandDispatcher.ts" />
-    <TypeScriptCompile Include="src\Core\Command\Impl\CommandListService.ts" />
+    <TypeScriptCompile Include="src\Core\Command\Service\Impl\CommandHandler.ts" />
+    <TypeScriptCompile Include="src\Core\Command\Service\Impl\CommandDispatcher.ts" />
+    <TypeScriptCompile Include="src\Core\Command\Service\Impl\CommandListService.ts" />
     <TypeScriptCompile Include="src\Core\Entity\Impl\AttributeListArray.ts" />
     <TypeScriptCompile Include="src\Core\Entity\Impl\Entity.ts" />
     <TypeScriptCompile Include="src\Core\Entity\IEntity.ts" />
     <TypeScriptCompile Include="src\Core\Entity\IterableKeyValuePair.ts" />
-    <TypeScriptCompile Include="src\Core\Events\IEventEntityFactory.ts" />
-    <TypeScriptCompile Include="src\Core\Events\IEventEngine.ts" />
-    <TypeScriptCompile Include="src\Core\Events\IEventEntityListService.ts" />
-    <TypeScriptCompile Include="src\Core\Events\Impl\EventEngine.ts" />
-    <TypeScriptCompile Include="src\Core\Events\Impl\EventEntityFactory.ts" />
-    <TypeScriptCompile Include="src\Core\Events\Impl\EventEntityListService.ts" />
+    <TypeScriptCompile Include="src\Core\Event\IEventEntityDispatcher.ts" />
+    <TypeScriptCompile Include="src\Core\Event\IEventEntityFactory.ts" />
+    <TypeScriptCompile Include="src\Core\Event\IEventEngine.ts" />
+    <TypeScriptCompile Include="src\Core\Event\IEventEntityListService.ts" />
+    <TypeScriptCompile Include="src\Core\Event\Impl\EventEngine.ts" />
+    <TypeScriptCompile Include="src\Core\Event\Impl\EventEntityFactory.ts" />
+    <TypeScriptCompile Include="src\Core\Event\Impl\EventEntityListService.ts" />
+    <TypeScriptCompile Include="src\Core\Event\Impl\IEventEntityDispatcher.ts" />
     <TypeScriptCompile Include="src\Core\Item\IItemListService.ts" />
-    <TypeScriptCompile Include="src\Core\Message\Impl\ClientServerMessageInit.ts" />
-    <TypeScriptCompile Include="src\Core\Message\Impl\ClientServerMessageWorldFullInfo.ts" />
-    <TypeScriptCompile Include="src\Core\Message\Impl\ClientServerMessageStepList.ts" />
-    <TypeScriptCompile Include="src\Core\Message\Impl\ClientServerMessageStep.ts" />
-    <TypeScriptCompile Include="src\Core\Message\Impl\ClientServerMessageCommandList.ts" />
-    <TypeScriptCompile Include="src\Core\Message\Impl\ClientServerMessageResponseAuthentication.ts" />
-    <TypeScriptCompile Include="src\Core\Message\Impl\ClientServerMessageRequestAuthentication.ts" />
-    <TypeScriptCompile Include="src\Core\Message\IClientServerMessage.ts" />
+    <TypeScriptCompile Include="src\Core\Message\Entity\Impl\ClientServerMessageConnect.ts" />
+    <TypeScriptCompile Include="src\Core\Message\Entity\Impl\ClientServerMessageInit.ts" />
+    <TypeScriptCompile Include="src\Core\Message\Entity\Impl\ClientServerMessageWorldFullInfo.ts" />
+    <TypeScriptCompile Include="src\Core\Message\Entity\Impl\ClientServerMessageStepList.ts" />
+    <TypeScriptCompile Include="src\Core\Message\Entity\Impl\ClientServerMessageStep.ts" />
+    <TypeScriptCompile Include="src\Core\Message\Entity\Impl\ClientServerMessageCommandList.ts" />
+    <TypeScriptCompile Include="src\Core\Message\Entity\Impl\ClientServerMessageResponseAuthentication.ts" />
+    <TypeScriptCompile Include="src\Core\Message\Entity\Impl\ClientServerMessageRequestAuthentication.ts" />
+    <TypeScriptCompile Include="src\Core\Message\Entity\IClientServerMessage.ts" />
     <TypeScriptCompile Include="src\Core\Entity\IAttributeList.ts" />
     <TypeScriptCompile Include="src\Core\Entity\Impl\AttributeListMap.ts" />
     <TypeScriptCompile Include="src\Core\Client\Service\IClientListService.ts" />
+    <TypeScriptCompile Include="src\Server\Message\Service\IClientServerMessageDispatcher.ts" />
+    <TypeScriptCompile Include="src\Server\Message\Service\IClientServerMessageHandler.ts" />
+    <TypeScriptCompile Include="src\Server\Message\Service\Impl\ClientServerMessageResponseAuthenticationHandler.ts" />
+    <TypeScriptCompile Include="src\Server\Message\Service\Impl\ClientServerMessageDispatcher.ts" />
+    <TypeScriptCompile Include="src\Server\Message\Service\Impl\ClientServerMessageConnectHandler.ts" />
+    <TypeScriptCompile Include="src\Server\Message\Service\Impl\ClientServerMessageHandler.ts" />
+    <TypeScriptCompile Include="src\Core\Service\IEntityHandler.ts" />
     <TypeScriptCompile Include="src\Core\Service\ILiteEvent.ts" />
+    <TypeScriptCompile Include="src\Core\Service\Impl\EntityHandler.ts" />
+    <TypeScriptCompile Include="src\Core\Service\Impl\EntityDispatcher.ts" />
     <TypeScriptCompile Include="src\Core\Service\Impl\LiteEvent.ts" />
     <TypeScriptCompile Include="src\Core\Service\Impl\EntityListService.ts" />
     <TypeScriptCompile Include="src\Core\Service\IEntityListService.ts" />
@@ -67,20 +80,31 @@
     <TypeScriptCompile Include="src\Core\Process\Service\Impl\ProcessListService.ts" />
     <TypeScriptCompile Include="src\Core\Service\IEntityFactory.ts" />
     <TypeScriptCompile Include="src\Core\Service\Impl\EntityFactory.ts" />
+    <TypeScriptCompile Include="src\Core\Service\IEntityDispatcher.ts" />
     <TypeScriptCompile Include="src\Core\World\Impl\WorldAttributeList.ts" />
     <TypeScriptCompile Include="src\Core\World\IWorldAttributeList.ts" />
     <TypeScriptCompile Include="src\Core\ModuleInfo.ts" />
+    <TypeScriptCompile Include="src\Server\Event\IEventWebSocketServer.ts" />
+    <TypeScriptCompile Include="src\Server\Event\IEventWebSocketClient.ts" />
+    <TypeScriptCompile Include="src\Server\Event\Impl\EventWebSocketServer.ts" />
+    <TypeScriptCompile Include="src\Server\Event\Impl\EventWebSocketClient.ts" />
+    <TypeScriptCompile Include="src\Server\Service\Impl\EstellaServer.ts" />
+    <TypeScriptCompile Include="src\Server\Service\Impl\WebSocketGameServerLobby.ts" />
+    <TypeScriptCompile Include="src\Server\Service\IWebSocketClientDispatcher.ts" />
+    <TypeScriptCompile Include="src\Server\Service\IEstellaServer.ts" />
+    <TypeScriptCompile Include="src\Server\Service\IWebSocketGameServerLobby.ts" />
+    <TypeScriptCompile Include="src\Server\Service\IWebSocketGameServerFactory.ts" />
     <TypeScriptCompile Include="src\Test\Core\Entity\AttributeListSpec.ts" />
     <TypeScriptCompile Include="src\Client\Service\Impl\WebSocketGameClient.ts" />
     <TypeScriptCompile Include="src\Client\Service\IWebSocketGameClient.ts" />
     <TypeScriptCompile Include="src\Client\Action\Impl\ClientAction.ts" />
     <TypeScriptCompile Include="src\Client\Action\IClientAction.ts" />
-    <TypeScriptCompile Include="src\Core\Command\ICommand.ts" />
-    <TypeScriptCompile Include="src\Core\Command\ICommandDispatcher.ts" />
-    <TypeScriptCompile Include="src\Core\Command\ICommandHandler.ts" />
-    <TypeScriptCompile Include="src\Core\Command\Impl\Command.ts" />
-    <TypeScriptCompile Include="src\Core\Command\ICommandListService.ts" />
-    <TypeScriptCompile Include="src\Core\Message\Impl\ClientServerMessage.ts" />
+    <TypeScriptCompile Include="src\Core\Command\Entity\ICommand.ts" />
+    <TypeScriptCompile Include="src\Core\Command\Service\ICommandDispatcher.ts" />
+    <TypeScriptCompile Include="src\Core\Command\Service\ICommandHandler.ts" />
+    <TypeScriptCompile Include="src\Core\Command\Entity\Impl\Command.ts" />
+    <TypeScriptCompile Include="src\Core\Command\Service\ICommandListService.ts" />
+    <TypeScriptCompile Include="src\Core\Message\Entity\Impl\ClientServerMessage.ts" />
     <TypeScriptCompile Include="src\Core\Entity\IFilterable.ts" />
     <TypeScriptCompile Include="src\Core\Service\ICommitable.ts" />
     <TypeScriptCompile Include="src\Core\Entity\Impl\AttributeListMapCommitable.ts" />
@@ -131,6 +155,9 @@
     <Folder Include="src\Core\Util\" />
     <Folder Include="src\Test\Core\Object\" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="src\Server\tsconfig.json" />
+  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">12.0</VisualStudioVersion>
   </PropertyGroup>
@@ -179,7 +206,8 @@
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets')" />
   <PropertyGroup>
-    <PostBuildEvent>gulp build-all</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>

@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+
+    "noImplicitAny": false,
+    "noEmitOnError": true,
+    "removeComments": false,
+    "declaration": true,
+    "sourceMap": false,
+    "target": "es6",
+    "outFile": "../../out/estella-core/estella-core-server.js"
+  },
+  "files": [
+    "../../lib/typings/node.d.ts",
+    "../../lib/typings/ws.d.ts",
+    "../Core/ModuleInfo.ts"
+  ],
+  "include": [
+    "../Core/**/*",
+    "../Server/**/*"
+  ]
+}

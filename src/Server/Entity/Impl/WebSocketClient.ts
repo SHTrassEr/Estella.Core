@@ -1,4 +1,4 @@
-﻿namespace Estella.Core {
+﻿namespace Estella.Core.Server {
 
     export class WebSocketClient implements IWebSocketClient {
 
@@ -7,13 +7,8 @@
         protected status: WebSocketClientStatus;
         protected client: any;
         protected sid: string;
-        protected onMessageHandler: (client: IWebSocketClient, message: IClientServerMessage) => void;
-        protected onCloseHandler: (client: IWebSocketClient) => void;
 
-        protected entityFactory: IEntityFactory;
-
-        constructor(entityFactory: IEntityFactory, id: number, client: any) {
-            this.entityFactory = entityFactory;
+        constructor(id: number, client: WebSocket) {
             this.id = id;
             this.client = client;
             this.setStatus(WebSocketClientStatus.Initialization);
@@ -21,36 +16,25 @@
         }
 
         protected init() {
-            this.client.on('message', this.onMessage.bind(this));
-            this.client.on('close', this.onMessage.bind(this));
+            this.client.on('message', this.socketMessageHandler.bind(this));
+            this.client.on('close', this.socketCloseHandler.bind(this));
         }
 
-        protected onMessage(message: any): void {
-            this.processMessage(JSON.parse(message));
+        protected socketMessageHandler(ev: any): void {
+            if (this.status != WebSocketClientStatus.Disconnected) {
+                this.processMessage(JSON.parse(ev));
+            }
+        }
+
+
+        protected socketCloseHandler(ev: any): void {
+            this.onClientClose.trigger(new EventWebSocketClient(this, ev));
         }
 
         protected processMessage(attr: Iterable<[number, any]>): void {
-            if (this.status != WebSocketClientStatus.Disconnected) {
-                if (attr && this.onMessageHandler) {
 
-                    try {
-                        var message = this.entityFactory.restore<IClientServerMessage>(attr, ClientServerMessage);
-                        this.onMessageHandler(this, message);
-                    }
-                    catch (e) {
-                        console.log(e);
-                        this.status = WebSocketClientStatus.Disconnected;
-                    }
-                    
-
-                }
-            }
-
-        }
-
-        protected onClose(): void {
-            if (this.onCloseHandler) {
-                this.onCloseHandler(this);
+            if (attr) {
+                this.onClientMessage.trigger(new EventWebSocketClient(this, attr));
             }
         }
 
@@ -82,6 +66,10 @@
             this.clientId = clientId;
         }
 
+        public close() {
+            this.client.close();
+        }
+
         public sendMessage(attr: IClientServerMessage): void {
             try {
                 this.client.send(JSON.stringify(attr.getList()));
@@ -92,16 +80,15 @@
             }
         }
 
-        public setOnMessage(handler: (client: IWebSocketClient, message: IClientServerMessage) => void): void {
-            this.onMessageHandler = handler;
+        private onClientMessage = new LiteEvent<IEventWebSocketClient<any>>();
+        private onClientClose = new LiteEvent<IEventWebSocketClient<any>>();
+
+        public clientMessage(): ILiteEvent<IEventWebSocketClient<any>> {
+            return this.onClientMessage;
         }
 
-        public setOnClose(handler: (client: IWebSocketClient) => void): void {
-            this.onCloseHandler = handler;
-        }
-
-        public close() {
-
+        public clientClose(): ILiteEvent<IEventWebSocketClient<any>> {
+            return this.onClientClose;
         }
     }
 }

@@ -1,8 +1,7 @@
 ﻿namespace Estella.Core {
 
-    export interface IProcessHandler {
+    export interface IProcessHandler extends IEntityHandler<IProcess>{
         init(process: IProcess): void;
-        execute(process: IProcess): void;
         finish(process: IProcess): void;
     }
 }

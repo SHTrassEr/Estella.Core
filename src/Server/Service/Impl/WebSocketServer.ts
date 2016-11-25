@@ -1,89 +1,71 @@
-﻿namespace Estella.Core {
+﻿namespace Estella.Core.Server {
 
     export class WebSocketServer implements IWebSocketServer {
 
         private server: any;
-        protected webSocketClientListService: IWebSocketClientListService;
-        protected onClientConnectedHandler: (webSocketClient: IWebSocketClient) => void;
-        protected onClientDisconnectedHandler: (webSocketClient: IWebSocketClient) => void;
-        protected onClientMessageHandler: (webSocketClient: IWebSocketClient, message: IClientServerMessage) => void;
-        protected entityFactory: IEntityFactory;
+        protected webSocketClientList: Map<number, IWebSocketClient>;
+        protected clientServerMessageDispatcher: IClientServerMessageDispatcher;
 
-        constructor(server: any, entityFactory: IEntityFactory) {
-            this.entityFactory = entityFactory;
-            this.webSocketClientListService = new WebSocketClientListService(entityFactory);
+        protected lastSocketClientId: number;
+
+        constructor(server: any) {
+            this.lastSocketClientId = 0;
+            this.webSocketClientList = new Map<number, IWebSocketClient>();
             this.server = server;
             this.init();
         }
 
         protected init() {
-            this.server.on('connection', this.onConnection.bind(this));
+            this.server.on('connection', this.clientConnectedhandler.bind(this));
         }
 
-        public sendAll(message: IClientServerMessage): void {
-            let webSocketClientList = this.webSocketClientListService.getWebSocketClientListIterator();
-            for (let webSocketClient of webSocketClientList) {
-                if (webSocketClient.getStatus() == WebSocketClientStatus.Connected) {
-                    webSocketClient.sendMessage(message);
-                }
-            }
-        }
-
-        public setOnClientConnected(handler: (webSocketClient: IWebSocketClient) => void): void {
-            this.onClientConnectedHandler = handler;
-        }
-
-        public setOnClientMessage(handler: (webSocketClient: IWebSocketClient, message: IClientServerMessage) => void): void {
-            this.onClientMessageHandler = handler;
-        }
-
-        public setOnClientDisconnected(handler: (webSocketClient: IWebSocketClient) => void): void {
-            this.onClientDisconnectedHandler = handler;
-        }
-
-        protected onConnection(client) {
-            let webSocketClient = this.webSocketClientListService.addWebSocketClient(client);
+        protected clientConnectedhandler(client) {
+            let newClientId = this.getNewClientId();
+            let webSocketClient = new WebSocketClient(newClientId, client);
+            this.webSocketClientList.set(newClientId, webSocketClient);
             this.initWebSocketClient(webSocketClient);
+            this.onClientConnected.trigger(new EventWebSocketServer(this, webSocketClient));
         }
 
         protected initWebSocketClient(webSocketClient: IWebSocketClient) {
-            webSocketClient.setOnMessage(this.onClientMessage.bind(this));
-            webSocketClient.setOnClose(this.onClientDisconnected.bind(this));
-
-            //this.entityFactory.create
-
-            let message = new ClientServerMessageRequestAuthentication();
-            webSocketClient.sendMessage(message);
+            webSocketClient.clientMessage().on(this.clientMessageHandler.bind(this));
         }
 
-        protected onClientMessage(webSocketClient: IWebSocketClient, message: IClientServerMessage) {
-            if (webSocketClient.getStatus() === WebSocketClientStatus.Initialization && message instanceof ClientServerMessageResponseAuthentication) {
-                this.doAuthentication(webSocketClient, message);
-            } else if (this.onClientMessageHandler) {
-                this.onClientMessageHandler(webSocketClient, message);
-            }
+        protected clientMessageHandler(ev: IEventWebSocketClient<any>) {
+            this.onClientMessage.trigger(new EventWebSocketServer(this, ev));
         }
 
         protected onClientDisconnected(webSocketClient: IWebSocketClient) {
+            this.webSocketClientList.delete(webSocketClient.getId());
             webSocketClient.setStatus(WebSocketClientStatus.Disconnected);
-        }
-
-        protected doAuthentication(webSocketClient: IWebSocketClient, message: ClientServerMessageResponseAuthentication) {
-            let sid = message.getSID();
-            console.log("Client connected. SID:" + sid);
-            webSocketClient.setSID(sid);
-            this.onClientConnected(webSocketClient);
-        }
-
-        protected onClientConnected(webSocketClient: IWebSocketClient) {
-            webSocketClient.setStatus(WebSocketClientStatus.Connected);
-            if (this.onClientConnectedHandler) {
-                this.onClientConnectedHandler(webSocketClient);
-            }
+            
         }
 
         public close() {
+            for (let client of this.webSocketClientList.values()) {
+                client.close();
+            }
+        }
 
+        protected getNewClientId(): number {
+            this.lastSocketClientId += 1;
+            return this.lastSocketClientId;
+        }
+
+        private onClientConnected = new LiteEvent<IEventWebSocketServer<IWebSocketClient>>();
+        private onClientMessage = new LiteEvent<IEventWebSocketServer<IEventWebSocketClient<any>>>();
+        private onClientClose = new LiteEvent<IEventWebSocketServer<IEventWebSocketClient<any>>>();
+
+        public clientConnected(): ILiteEvent<IEventWebSocketServer<IWebSocketClient>> {
+            return this.onClientConnected;
+        }
+
+        public clientMessage(): ILiteEvent<IEventWebSocketServer<IEventWebSocketClient<any>>> {
+            return this.onClientMessage;
+        }
+
+        public clientClose(): ILiteEvent<IEventWebSocketServer<IEventWebSocketClient<any>>> {
+            return this.onClientClose;
         }
     }
 }

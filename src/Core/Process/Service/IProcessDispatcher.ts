@@ -1,8 +1,7 @@
 ﻿namespace Estella.Core {
 
-    export interface IProcessDispatcher {
+    export interface IProcessDispatcher extends IEntityDispatcher<IProcess, IProcessHandler> {
         init(process: IProcess): void;
-        execute(process: IProcess): void;
         finish(process: IProcess): void;
     }
 

@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+
+    "noImplicitAny": false,
+    "noEmitOnError": true,
+    "removeComments": false,
+    "declaration": true,
+    "sourceMap": false,
+    "target": "es6",
+    "outFile": "../../out/estella-core/estella-core-client.js"
+  },
+  "files": [
+    "../Core/ModuleInfo.ts"
+  ],
+  "include": [
+    "../core/**/*",
+    "../client/**/*"
+  ]
+
+}

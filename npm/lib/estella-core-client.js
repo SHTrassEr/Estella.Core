@@ -13,6 +13,182 @@ var Estella;
 (function (Estella) {
     var Core;
     (function (Core) {
+        class ClientAction {
+            constructor() {
+                this.commandListService = new Core.CommandListService();
+            }
+            getCommandKeyValuePairList() {
+                return this.commandListService.getCommandKeyValuePairList();
+            }
+            clear() {
+                this.commandListService.clear();
+            }
+            setOnAction(handler) {
+                this.onActionHandler = handler;
+            }
+            onAction() {
+                if (this.onActionHandler) {
+                    this.onActionHandler(this);
+                }
+            }
+        }
+        Core.ClientAction = ClientAction;
+    })(Core = Estella.Core || (Estella.Core = {}));
+})(Estella || (Estella = {}));
+var Estella;
+(function (Estella) {
+    var Core;
+    (function (Core) {
+        class WebSocketGameClient {
+            constructor(socket, sid, clientAction, engine) {
+                this.engine = engine;
+                this.socket = socket;
+                this.clientAction = clientAction;
+                this.sid = sid;
+                this.clientAction.setOnAction(this.onClientAction.bind(this));
+                this.init();
+            }
+            getClientId() {
+                return this.clientId;
+            }
+            getEngine() {
+                return this.engine;
+            }
+            setOnConnected(handler) {
+                this.onConnectedHandler = handler;
+            }
+            commandInitializator(attr) {
+                return new Core.Command(new Core.AttributeListArray(), attr);
+            }
+            init() {
+                this.socket.onopen = this.onOpen.bind(this);
+                this.socket.onmessage = this.onMessage.bind(this);
+                this.socket.onclose = this.onClose.bind(this);
+                this.socket.onerror = this.onError.bind(this);
+            }
+            onClientAction(clientAction) {
+                let commandList = clientAction.getCommandKeyValuePairList();
+                clientAction.clear();
+                var message = new Core.ClientServerMessageCommandList();
+                message.setCommandList(commandList);
+                this.sendMessage(message);
+            }
+            onOpen(ev) {
+            }
+            onMessage(ev) {
+                let message = JSON.parse(ev.data);
+                this.processServerMessage(message);
+            }
+            processServerMessage(attr) {
+                let message = this.engine.getWorld().getEntityFactory().restore(attr, Core.ClientServerMessage);
+                switch (message.getType()) {
+                    case Core.ClientServerMessageRequestAuthentication.type:
+                        this.sendAuthentication();
+                        break;
+                    case Core.ClientServerMessageInit.type:
+                        this.processInit(message);
+                        break;
+                    case Core.ClientServerMessageStep.type:
+                        this.processStep(message);
+                        break;
+                    case Core.ClientServerMessageStepList.type:
+                        this.processStepList(message);
+                        break;
+                    case Core.ClientServerMessageWorldFullInfo.type:
+                        this.processWorldFullInfo(message);
+                        break;
+                }
+            }
+            sendAuthentication() {
+                let message = new Core.ClientServerMessageResponseAuthentication();
+                message.setSID(this.sid);
+                this.sendMessage(message);
+            }
+            processStep(message) {
+                let commandListAttr = message.getCommandList();
+                let commandList = this.engine.getWorld().getEntityFactory().restoreList(commandListAttr, Core.Command);
+                this.engine.getCommandListService().setCommandList(commandList);
+                this.engine.update();
+            }
+            processStepList(message) {
+                var stepListAttr = message.getStepList();
+                var stepList = this.engine.getWorld().getEntityFactory().restoreList(stepListAttr, Core.ClientServerMessageStep);
+                for (var step of stepList) {
+                    this.processStep(step);
+                }
+            }
+            processWorldFullInfo(message) {
+                let world = this.engine.getWorld();
+                world.getWorldAttributeList().setList(message.getWorldAttributeList(), true);
+                let itemList = world.getEntityFactory().restoreList(message.getItemListService(), Core.Item);
+                world.getItemListService().setList(itemList, true);
+                let processList = world.getEntityFactory().restoreList(message.getProcessListService(), Core.Process);
+                world.getProcessListService().setList(processList, true);
+                let clientList = world.getEntityFactory().restoreList(message.getClientListService(), Core.Client);
+                world.getClientListService().setList(clientList, true);
+            }
+            processInit(message) {
+                this.clientId = message.getClientId();
+                if (this.onConnectedHandler) {
+                    this.onConnectedHandler(this);
+                }
+            }
+            onClose(ev) {
+            }
+            onError(ev) {
+            }
+            sendMessage(message) {
+                this.socket.send(JSON.stringify(message.getList()));
+            }
+        }
+        Core.WebSocketGameClient = WebSocketGameClient;
+    })(Core = Estella.Core || (Estella.Core = {}));
+})(Estella || (Estella = {}));
+var Estella;
+(function (Estella) {
+    var Core;
+    (function (Core) {
+        class View {
+            constructor(rootElement, world) {
+                this.world = world;
+                this.rootElement = rootElement;
+                this.clearHtmlElement(this.rootElement);
+                this.worldAttributeList = world.getWorldAttributeList();
+                this.itemListService = world.getItemListService();
+                this.processListService = world.getProcessListService();
+                this.clientListService = world.getClientListService();
+                this.isStarted = false;
+            }
+            setClientId(clientId) {
+                this.clientId = clientId;
+            }
+            clearHtmlElement(element) {
+                while (element.firstChild) {
+                    element.removeChild(element.firstChild);
+                }
+            }
+            draw() {
+                if (this.isStarted) {
+                    this.refresh();
+                    requestAnimationFrame(this.draw.bind(this));
+                }
+            }
+            start() {
+                this.isStarted = true;
+                this.draw();
+            }
+            stop() {
+                this.isStarted = false;
+            }
+        }
+        Core.View = View;
+    })(Core = Estella.Core || (Estella.Core = {}));
+})(Estella || (Estella = {}));
+/// <reference path="../../ModuleInfo.ts" />
+var Estella;
+(function (Estella) {
+    var Core;
+    (function (Core) {
         class Entity {
             constructor(attributeList, kvpList) {
                 this.lastAttributeId = 0;
@@ -65,6 +241,30 @@ var Estella;
         })(Entity = Core.Entity || (Core.Entity = {}));
     })(Core = Estella.Core || (Estella.Core = {}));
 })(Estella || (Estella = {}));
+/// <reference path="../../../Entity/Impl/Entity.ts" />
+var Estella;
+(function (Estella) {
+    var Core;
+    (function (Core) {
+        class Client extends Core.Entity {
+            constructor() {
+                super(...arguments);
+                this.attributeNameId = ++this.lastAttributeId;
+            }
+            getName() {
+                return this.attributeList.get(this.attributeNameId);
+            }
+            setName(name) {
+                this.attributeList.set(this.attributeNameId, name);
+            }
+        }
+        Core.Client = Client;
+        (function (Client) {
+            Client.type = Core.ModuleInfo.name + '.' + Client.name;
+        })(Client = Core.Client || (Core.Client = {}));
+    })(Core = Estella.Core || (Estella.Core = {}));
+})(Estella || (Estella = {}));
+/// <reference path="../../Entity/Impl/Entity.ts" />
 var Estella;
 (function (Estella) {
     var Core;
@@ -482,6 +682,32 @@ var Estella;
 (function (Estella) {
     var Core;
     (function (Core) {
+        class BaseException {
+            constructor(message) {
+                this.message = message;
+            }
+            getMessage() {
+                return this.message;
+            }
+        }
+        Core.BaseException = BaseException;
+    })(Core = Estella.Core || (Estella.Core = {}));
+})(Estella || (Estella = {}));
+/// <reference path="BaseException.ts" />
+var Estella;
+(function (Estella) {
+    var Core;
+    (function (Core) {
+        class NotImplementedException {
+        }
+        Core.NotImplementedException = NotImplementedException;
+    })(Core = Estella.Core || (Estella.Core = {}));
+})(Estella || (Estella = {}));
+/// <reference path="../../Entity/Impl/Entity.ts" />
+var Estella;
+(function (Estella) {
+    var Core;
+    (function (Core) {
         class Item extends Core.Entity {
         }
         Core.Item = Item;
@@ -490,6 +716,7 @@ var Estella;
         })(Item = Core.Item || (Core.Item = {}));
     })(Core = Estella.Core || (Estella.Core = {}));
 })(Estella || (Estella = {}));
+/// <reference path="../../Entity/Impl/Entity.ts" />
 var Estella;
 (function (Estella) {
     var Core;
@@ -502,6 +729,7 @@ var Estella;
         })(ClientServerMessage = Core.ClientServerMessage || (Core.ClientServerMessage = {}));
     })(Core = Estella.Core || (Estella.Core = {}));
 })(Estella || (Estella = {}));
+/// <reference path="ClientServerMessage.ts" />
 var Estella;
 (function (Estella) {
     var Core;
@@ -524,6 +752,7 @@ var Estella;
         })(ClientServerMessageCommandList = Core.ClientServerMessageCommandList || (Core.ClientServerMessageCommandList = {}));
     })(Core = Estella.Core || (Estella.Core = {}));
 })(Estella || (Estella = {}));
+/// <reference path="ClientServerMessage.ts" />
 var Estella;
 (function (Estella) {
     var Core;
@@ -546,6 +775,7 @@ var Estella;
         })(ClientServerMessageInit = Core.ClientServerMessageInit || (Core.ClientServerMessageInit = {}));
     })(Core = Estella.Core || (Estella.Core = {}));
 })(Estella || (Estella = {}));
+/// <reference path="ClientServerMessage.ts" />
 var Estella;
 (function (Estella) {
     var Core;
@@ -558,6 +788,7 @@ var Estella;
         })(ClientServerMessageRequestAuthentication = Core.ClientServerMessageRequestAuthentication || (Core.ClientServerMessageRequestAuthentication = {}));
     })(Core = Estella.Core || (Estella.Core = {}));
 })(Estella || (Estella = {}));
+/// <reference path="ClientServerMessage.ts" />
 var Estella;
 (function (Estella) {
     var Core;
@@ -580,6 +811,7 @@ var Estella;
         })(ClientServerMessageResponseAuthentication = Core.ClientServerMessageResponseAuthentication || (Core.ClientServerMessageResponseAuthentication = {}));
     })(Core = Estella.Core || (Estella.Core = {}));
 })(Estella || (Estella = {}));
+/// <reference path="ClientServerMessage.ts" />
 var Estella;
 (function (Estella) {
     var Core;
@@ -615,6 +847,7 @@ var Estella;
         })(ClientServerMessageStep = Core.ClientServerMessageStep || (Core.ClientServerMessageStep = {}));
     })(Core = Estella.Core || (Estella.Core = {}));
 })(Estella || (Estella = {}));
+/// <reference path="ClientServerMessage.ts" />
 var Estella;
 (function (Estella) {
     var Core;
@@ -643,6 +876,7 @@ var Estella;
         })(ClientServerMessageStepList = Core.ClientServerMessageStepList || (Core.ClientServerMessageStepList = {}));
     })(Core = Estella.Core || (Estella.Core = {}));
 })(Estella || (Estella = {}));
+/// <reference path="ClientServerMessage.ts" />
 var Estella;
 (function (Estella) {
     var Core;
@@ -690,6 +924,315 @@ var Estella;
         (function (ClientServerMessageWorldFullInfo) {
             ClientServerMessageWorldFullInfo.type = Core.ModuleInfo.name + '.' + ClientServerMessageWorldFullInfo.name;
         })(ClientServerMessageWorldFullInfo = Core.ClientServerMessageWorldFullInfo || (Core.ClientServerMessageWorldFullInfo = {}));
+    })(Core = Estella.Core || (Estella.Core = {}));
+})(Estella || (Estella = {}));
+/// <reference path="../../../Entity/Impl/Entity.ts" />
+var Estella;
+(function (Estella) {
+    var Core;
+    (function (Core) {
+        class Process extends Core.Entity {
+            constructor() {
+                super(...arguments);
+                this._processStatus = ++this.lastAttributeId;
+                this._initStep = ++this.lastAttributeId;
+                this._finishStep = ++this.lastAttributeId;
+            }
+            getStatus() {
+                return this.attributeList.get(this._processStatus, Core.ProcessStatus.Init);
+            }
+            setStatus(processStatus) {
+                this.attributeList.set(this._processStatus, processStatus);
+            }
+            getInitStep() {
+                return this.attributeList.get(this._initStep, 0);
+            }
+            setInitStep(initStep) {
+                this.attributeList.set(this._initStep, initStep);
+            }
+            getFinishStep() {
+                return this.attributeList.get(this._finishStep, 0);
+            }
+            setFinishStep(finishStep) {
+                this.attributeList.set(this._finishStep, finishStep);
+            }
+        }
+        Core.Process = Process;
+        (function (Process) {
+            Process.type = Core.ModuleInfo.name + '.' + Process.name;
+        })(Process = Core.Process || (Core.Process = {}));
+    })(Core = Estella.Core || (Estella.Core = {}));
+})(Estella || (Estella = {}));
+var Estella;
+(function (Estella) {
+    var Core;
+    (function (Core) {
+        (function (ProcessStatus) {
+            ProcessStatus[ProcessStatus["Unknown"] = 0] = "Unknown";
+            ProcessStatus[ProcessStatus["Init"] = 1] = "Init";
+            ProcessStatus[ProcessStatus["Executing"] = 2] = "Executing";
+            ProcessStatus[ProcessStatus["Finished"] = 3] = "Finished";
+        })(Core.ProcessStatus || (Core.ProcessStatus = {}));
+        var ProcessStatus = Core.ProcessStatus;
+    })(Core = Estella.Core || (Estella.Core = {}));
+})(Estella || (Estella = {}));
+var Estella;
+(function (Estella) {
+    var Core;
+    (function (Core) {
+        (function (ProcessType) {
+            ProcessType[ProcessType["Unknown"] = 0] = "Unknown";
+        })(Core.ProcessType || (Core.ProcessType = {}));
+        var ProcessType = Core.ProcessType;
+    })(Core = Estella.Core || (Estella.Core = {}));
+})(Estella || (Estella = {}));
+var Estella;
+(function (Estella) {
+    var Core;
+    (function (Core) {
+        class ProcessDispatcher {
+            constructor() {
+                this.processHandlerList = new Map();
+            }
+            execute(process) {
+                let processStatus = process.getStatus();
+                if (processStatus === Core.ProcessStatus.Executing) {
+                    let handler = this.getHandler(process);
+                    handler.execute(process);
+                }
+            }
+            init(process) {
+                let processStatus = process.getStatus();
+                if (processStatus === Core.ProcessStatus.Init) {
+                    let handler = this.getHandler(process);
+                    handler.init(process);
+                }
+            }
+            finish(process) {
+                let processStatus = process.getStatus();
+                if (processStatus !== Core.ProcessStatus.Finished) {
+                    let handler = this.getHandler(process);
+                    handler.finish(process);
+                }
+            }
+            getHandler(process) {
+                let handler = this.processHandlerList.get(process.getType());
+                if (handler) {
+                    return handler;
+                }
+                throw new Error();
+            }
+        }
+        Core.ProcessDispatcher = ProcessDispatcher;
+    })(Core = Estella.Core || (Estella.Core = {}));
+})(Estella || (Estella = {}));
+var Estella;
+(function (Estella) {
+    var Core;
+    (function (Core) {
+        class ProcessHandler {
+            constructor(world) {
+                this.world = world;
+            }
+            init(process) {
+                if (this.isValidProcessType(process)) {
+                    this.initProcess(process);
+                    this.setInitStep(process);
+                    if (process.getStatus() === Core.ProcessStatus.Init) {
+                        process.setStatus(Core.ProcessStatus.Executing);
+                    }
+                    else if (process.getStatus() === Core.ProcessStatus.Finished) {
+                        this.setFinishStep(process);
+                    }
+                }
+            }
+            execute(process) {
+                if (this.isValidProcessType(process)) {
+                    this.executeProcess(process);
+                }
+            }
+            finish(process) {
+                if (this.isValidProcessType(process)) {
+                    this.finishProcess(process);
+                    process.setStatus(Core.ProcessStatus.Finished);
+                    this.setFinishStep(process);
+                }
+            }
+            setInitStep(process) {
+                process.setInitStep(this.world.getWorldAttributeList().getStepNumber());
+            }
+            setFinishStep(process) {
+                process.setFinishStep(this.world.getWorldAttributeList().getStepNumber());
+            }
+            initProcess(process) {
+            }
+            executeProcess(process) {
+            }
+            finishProcess(process) {
+            }
+            isValidProcessType(command) {
+                return true;
+            }
+            startProcess(process) {
+                this.world.getProcessListService().add(process);
+                this.world.getProcessDispatcher().init(process);
+            }
+        }
+        Core.ProcessHandler = ProcessHandler;
+    })(Core = Estella.Core || (Estella.Core = {}));
+})(Estella || (Estella = {}));
+var Estella;
+(function (Estella) {
+    var Core;
+    (function (Core) {
+        class ProcessListService {
+            constructor() {
+                this.processList = [];
+                this.filterService = new Core.FilterService();
+            }
+            init(processList) {
+                this.processList = [];
+                for (let p of processList) {
+                    this.add(p);
+                }
+            }
+            getProcessList() {
+                return this.processList;
+            }
+            add(process) {
+                this.processList.push(process);
+            }
+            removeFinished() {
+                let list;
+                for (let i = this.processList.length - 1; i >= 0; i--) {
+                    let process = this.processList[i];
+                    if (process.getStatus() == Core.ProcessStatus.Finished) {
+                        this.processList.splice(i, 1);
+                    }
+                }
+            }
+            clear() {
+                this.processList = [];
+            }
+            *getIterator() {
+                for (let process of this.processList) {
+                    yield process;
+                }
+            }
+            getList() {
+                let iterator = this.getIterator();
+                let list = [];
+                for (let entity of iterator) {
+                    list.push(entity.getList());
+                }
+                return list;
+            }
+            setList(entityList, clear) {
+                if (clear) {
+                    this.clear();
+                }
+                for (let entity of entityList) {
+                    this.add(entity);
+                }
+            }
+            getAll(condition) {
+                return this.filterService.getAll(this.processList, condition);
+            }
+            getFirst(condition) {
+                return this.filterService.getFirst(this.processList, condition);
+            }
+        }
+        Core.ProcessListService = ProcessListService;
+    })(Core = Estella.Core || (Estella.Core = {}));
+})(Estella || (Estella = {}));
+var Estella;
+(function (Estella) {
+    var Core;
+    (function (Core) {
+        class ProcessListServiceCommitable {
+            constructor() {
+                this.processList = [];
+                this.filterService = new Core.FilterService();
+                this.firstUncommitedIndex = 0;
+            }
+            getProcessList() {
+                return this.processList;
+            }
+            add(process) {
+                this.processList.push(process);
+            }
+            init(processList) {
+                this.processList = [];
+                for (let p of processList) {
+                    this.add(p);
+                }
+            }
+            removeFinished() {
+                let list;
+                for (let i = this.firstUncommitedIndex - 1; i >= 0; i--) {
+                    let process = this.processList[i];
+                    if (process.getStatus() == Core.ProcessStatus.Finished) {
+                        this.processList.splice(i, 1);
+                        this.firstUncommitedIndex--;
+                    }
+                }
+            }
+            clear() {
+                this.processList = [];
+                this.firstUncommitedIndex = 0;
+            }
+            getIterator() {
+                return this.processList.values();
+            }
+            getList() {
+                let iterator = this.getIterator();
+                let list = [];
+                for (let entity of iterator) {
+                    list.push(entity.getList());
+                }
+                return list;
+            }
+            setList(processList, clear) {
+                if (clear) {
+                    this.clear();
+                }
+                for (let entity of processList) {
+                    this.add(entity);
+                }
+            }
+            commit() {
+                for (let process of this.processList) {
+                    process.getAttributeList().commit();
+                }
+                this.firstUncommitedIndex = this.processList.length;
+            }
+            rollback() {
+                if (this.processList.length > this.firstUncommitedIndex) {
+                    this.processList.splice(this.firstUncommitedIndex);
+                }
+                for (let process of this.processList) {
+                    process.getAttributeList().rollback();
+                }
+            }
+            isDirty() {
+                if (this.processList.length > this.firstUncommitedIndex) {
+                    return true;
+                }
+                for (let process of this.processList) {
+                    if (process.getAttributeList().isDirty()) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            getAll(condition) {
+                return this.filterService.getAll(this.processList.values(), condition);
+            }
+            getFirst(condition) {
+                return this.filterService.getFirst(this.processList.values(), condition);
+            }
+        }
+        Core.ProcessListServiceCommitable = ProcessListServiceCommitable;
     })(Core = Estella.Core || (Estella.Core = {}));
 })(Estella || (Estella = {}));
 var Estella;
@@ -1141,6 +1684,7 @@ var Estella;
             constructor(engine) {
                 this.engine = engine;
                 var tickLength = engine.getWorld().getWorldAttributeList().getTickLength();
+                //let tickLength = 100;
                 this.metronome = new Core.Metronome(tickLength);
                 this.commandLog = [];
                 this.emptyCommandList = [];
@@ -1253,6 +1797,16 @@ var Estella;
 (function (Estella) {
     var Core;
     (function (Core) {
+        class ServiceAttributeType {
+        }
+        ServiceAttributeType.LastId = "LastId";
+        Core.ServiceAttributeType = ServiceAttributeType;
+    })(Core = Estella.Core || (Estella.Core = {}));
+})(Estella || (Estella = {}));
+var Estella;
+(function (Estella) {
+    var Core;
+    (function (Core) {
         class World {
             constructor(worldAttributeList) {
                 this.worldAttributeList = worldAttributeList;
@@ -1301,6 +1855,7 @@ var Estella;
         Core.World = World;
     })(Core = Estella.Core || (Estella.Core = {}));
 })(Estella || (Estella = {}));
+/// <reference path="../../Entity/Impl/Entity.ts" />
 var Estella;
 (function (Estella) {
     var Core;
@@ -1343,544 +1898,5 @@ var Estella;
             WorldAttributeList.LastTypeId = 0;
             WorldAttributeList.Type = ++WorldAttributeList.LastTypeId;
         })(WorldAttributeList = Core.WorldAttributeList || (Core.WorldAttributeList = {}));
-    })(Core = Estella.Core || (Estella.Core = {}));
-})(Estella || (Estella = {}));
-var Estella;
-(function (Estella) {
-    var Core;
-    (function (Core) {
-        class Client extends Core.Entity {
-            constructor() {
-                super(...arguments);
-                this.attributeNameId = ++this.lastAttributeId;
-            }
-            getName() {
-                return this.attributeList.get(this.attributeNameId);
-            }
-            setName(name) {
-                this.attributeList.set(this.attributeNameId, name);
-            }
-        }
-        Core.Client = Client;
-        (function (Client) {
-            Client.type = Core.ModuleInfo.name + '.' + Client.name;
-        })(Client = Core.Client || (Core.Client = {}));
-    })(Core = Estella.Core || (Estella.Core = {}));
-})(Estella || (Estella = {}));
-var Estella;
-(function (Estella) {
-    var Core;
-    (function (Core) {
-        class Process extends Core.Entity {
-            constructor() {
-                super(...arguments);
-                this._processStatus = ++this.lastAttributeId;
-                this._initStep = ++this.lastAttributeId;
-                this._finishStep = ++this.lastAttributeId;
-            }
-            getStatus() {
-                return this.attributeList.get(this._processStatus, Core.ProcessStatus.Init);
-            }
-            setStatus(processStatus) {
-                this.attributeList.set(this._processStatus, processStatus);
-            }
-            getInitStep() {
-                return this.attributeList.get(this._initStep, 0);
-            }
-            setInitStep(initStep) {
-                this.attributeList.set(this._initStep, initStep);
-            }
-            getFinishStep() {
-                return this.attributeList.get(this._finishStep, 0);
-            }
-            setFinishStep(finishStep) {
-                this.attributeList.set(this._finishStep, finishStep);
-            }
-        }
-        Core.Process = Process;
-        (function (Process) {
-            Process.type = Core.ModuleInfo.name + '.' + Process.name;
-        })(Process = Core.Process || (Core.Process = {}));
-    })(Core = Estella.Core || (Estella.Core = {}));
-})(Estella || (Estella = {}));
-var Estella;
-(function (Estella) {
-    var Core;
-    (function (Core) {
-        class ProcessDispatcher {
-            constructor() {
-                this.processHandlerList = new Map();
-            }
-            execute(process) {
-                let processStatus = process.getStatus();
-                if (processStatus === Core.ProcessStatus.Executing) {
-                    let handler = this.getHandler(process);
-                    handler.execute(process);
-                }
-            }
-            init(process) {
-                let processStatus = process.getStatus();
-                if (processStatus === Core.ProcessStatus.Init) {
-                    let handler = this.getHandler(process);
-                    handler.init(process);
-                }
-            }
-            finish(process) {
-                let processStatus = process.getStatus();
-                if (processStatus !== Core.ProcessStatus.Finished) {
-                    let handler = this.getHandler(process);
-                    handler.finish(process);
-                }
-            }
-            getHandler(process) {
-                let handler = this.processHandlerList.get(process.getType());
-                if (handler) {
-                    return handler;
-                }
-                throw new Error();
-            }
-        }
-        Core.ProcessDispatcher = ProcessDispatcher;
-    })(Core = Estella.Core || (Estella.Core = {}));
-})(Estella || (Estella = {}));
-var Estella;
-(function (Estella) {
-    var Core;
-    (function (Core) {
-        class ProcessHandler {
-            constructor(world) {
-                this.world = world;
-            }
-            init(process) {
-                if (this.isValidProcessType(process)) {
-                    this.initProcess(process);
-                    this.setInitStep(process);
-                    if (process.getStatus() === Core.ProcessStatus.Init) {
-                        process.setStatus(Core.ProcessStatus.Executing);
-                    }
-                    else if (process.getStatus() === Core.ProcessStatus.Finished) {
-                        this.setFinishStep(process);
-                    }
-                }
-            }
-            execute(process) {
-                if (this.isValidProcessType(process)) {
-                    this.executeProcess(process);
-                }
-            }
-            finish(process) {
-                if (this.isValidProcessType(process)) {
-                    this.finishProcess(process);
-                    process.setStatus(Core.ProcessStatus.Finished);
-                    this.setFinishStep(process);
-                }
-            }
-            setInitStep(process) {
-                process.setInitStep(this.world.getWorldAttributeList().getStepNumber());
-            }
-            setFinishStep(process) {
-                process.setFinishStep(this.world.getWorldAttributeList().getStepNumber());
-            }
-            initProcess(process) {
-            }
-            executeProcess(process) {
-            }
-            finishProcess(process) {
-            }
-            isValidProcessType(command) {
-                return true;
-            }
-            startProcess(process) {
-                this.world.getProcessListService().add(process);
-                this.world.getProcessDispatcher().init(process);
-            }
-        }
-        Core.ProcessHandler = ProcessHandler;
-    })(Core = Estella.Core || (Estella.Core = {}));
-})(Estella || (Estella = {}));
-var Estella;
-(function (Estella) {
-    var Core;
-    (function (Core) {
-        class ProcessListService {
-            constructor() {
-                this.processList = [];
-                this.filterService = new Core.FilterService();
-            }
-            init(processList) {
-                this.processList = [];
-                for (let p of processList) {
-                    this.add(p);
-                }
-            }
-            getProcessList() {
-                return this.processList;
-            }
-            add(process) {
-                this.processList.push(process);
-            }
-            removeFinished() {
-                let list;
-                for (let i = this.processList.length - 1; i >= 0; i--) {
-                    let process = this.processList[i];
-                    if (process.getStatus() == Core.ProcessStatus.Finished) {
-                        this.processList.splice(i, 1);
-                    }
-                }
-            }
-            clear() {
-                this.processList = [];
-            }
-            *getIterator() {
-                for (let process of this.processList) {
-                    yield process;
-                }
-            }
-            getList() {
-                let iterator = this.getIterator();
-                let list = [];
-                for (let entity of iterator) {
-                    list.push(entity.getList());
-                }
-                return list;
-            }
-            setList(entityList, clear) {
-                if (clear) {
-                    this.clear();
-                }
-                for (let entity of entityList) {
-                    this.add(entity);
-                }
-            }
-            getAll(condition) {
-                return this.filterService.getAll(this.processList, condition);
-            }
-            getFirst(condition) {
-                return this.filterService.getFirst(this.processList, condition);
-            }
-        }
-        Core.ProcessListService = ProcessListService;
-    })(Core = Estella.Core || (Estella.Core = {}));
-})(Estella || (Estella = {}));
-var Estella;
-(function (Estella) {
-    var Core;
-    (function (Core) {
-        class ProcessListServiceCommitable {
-            constructor() {
-                this.processList = [];
-                this.filterService = new Core.FilterService();
-                this.firstUncommitedIndex = 0;
-            }
-            getProcessList() {
-                return this.processList;
-            }
-            add(process) {
-                this.processList.push(process);
-            }
-            init(processList) {
-                this.processList = [];
-                for (let p of processList) {
-                    this.add(p);
-                }
-            }
-            removeFinished() {
-                let list;
-                for (let i = this.firstUncommitedIndex - 1; i >= 0; i--) {
-                    let process = this.processList[i];
-                    if (process.getStatus() == Core.ProcessStatus.Finished) {
-                        this.processList.splice(i, 1);
-                        this.firstUncommitedIndex--;
-                    }
-                }
-            }
-            clear() {
-                this.processList = [];
-                this.firstUncommitedIndex = 0;
-            }
-            getIterator() {
-                return this.processList.values();
-            }
-            getList() {
-                let iterator = this.getIterator();
-                let list = [];
-                for (let entity of iterator) {
-                    list.push(entity.getList());
-                }
-                return list;
-            }
-            setList(processList, clear) {
-                if (clear) {
-                    this.clear();
-                }
-                for (let entity of processList) {
-                    this.add(entity);
-                }
-            }
-            commit() {
-                for (let process of this.processList) {
-                    process.getAttributeList().commit();
-                }
-                this.firstUncommitedIndex = this.processList.length;
-            }
-            rollback() {
-                if (this.processList.length > this.firstUncommitedIndex) {
-                    this.processList.splice(this.firstUncommitedIndex);
-                }
-                for (let process of this.processList) {
-                    process.getAttributeList().rollback();
-                }
-            }
-            isDirty() {
-                if (this.processList.length > this.firstUncommitedIndex) {
-                    return true;
-                }
-                for (let process of this.processList) {
-                    if (process.getAttributeList().isDirty()) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-            getAll(condition) {
-                return this.filterService.getAll(this.processList.values(), condition);
-            }
-            getFirst(condition) {
-                return this.filterService.getFirst(this.processList.values(), condition);
-            }
-        }
-        Core.ProcessListServiceCommitable = ProcessListServiceCommitable;
-    })(Core = Estella.Core || (Estella.Core = {}));
-})(Estella || (Estella = {}));
-var Estella;
-(function (Estella) {
-    var Core;
-    (function (Core) {
-        class BaseException {
-            constructor(message) {
-                this.message = message;
-            }
-            getMessage() {
-                return this.message;
-            }
-        }
-        Core.BaseException = BaseException;
-    })(Core = Estella.Core || (Estella.Core = {}));
-})(Estella || (Estella = {}));
-var Estella;
-(function (Estella) {
-    var Core;
-    (function (Core) {
-        class NotImplementedException {
-        }
-        Core.NotImplementedException = NotImplementedException;
-    })(Core = Estella.Core || (Estella.Core = {}));
-})(Estella || (Estella = {}));
-var Estella;
-(function (Estella) {
-    var Core;
-    (function (Core) {
-        (function (ProcessStatus) {
-            ProcessStatus[ProcessStatus["Unknown"] = 0] = "Unknown";
-            ProcessStatus[ProcessStatus["Init"] = 1] = "Init";
-            ProcessStatus[ProcessStatus["Executing"] = 2] = "Executing";
-            ProcessStatus[ProcessStatus["Finished"] = 3] = "Finished";
-        })(Core.ProcessStatus || (Core.ProcessStatus = {}));
-        var ProcessStatus = Core.ProcessStatus;
-    })(Core = Estella.Core || (Estella.Core = {}));
-})(Estella || (Estella = {}));
-var Estella;
-(function (Estella) {
-    var Core;
-    (function (Core) {
-        (function (ProcessType) {
-            ProcessType[ProcessType["Unknown"] = 0] = "Unknown";
-        })(Core.ProcessType || (Core.ProcessType = {}));
-        var ProcessType = Core.ProcessType;
-    })(Core = Estella.Core || (Estella.Core = {}));
-})(Estella || (Estella = {}));
-var Estella;
-(function (Estella) {
-    var Core;
-    (function (Core) {
-        class ServiceAttributeType {
-        }
-        ServiceAttributeType.LastId = "LastId";
-        Core.ServiceAttributeType = ServiceAttributeType;
-    })(Core = Estella.Core || (Estella.Core = {}));
-})(Estella || (Estella = {}));
-var Estella;
-(function (Estella) {
-    var Core;
-    (function (Core) {
-        class ClientAction {
-            constructor() {
-                this.commandListService = new Core.CommandListService();
-            }
-            getCommandKeyValuePairList() {
-                return this.commandListService.getCommandKeyValuePairList();
-            }
-            clear() {
-                this.commandListService.clear();
-            }
-            setOnAction(handler) {
-                this.onActionHandler = handler;
-            }
-            onAction() {
-                if (this.onActionHandler) {
-                    this.onActionHandler(this);
-                }
-            }
-        }
-        Core.ClientAction = ClientAction;
-    })(Core = Estella.Core || (Estella.Core = {}));
-})(Estella || (Estella = {}));
-var Estella;
-(function (Estella) {
-    var Core;
-    (function (Core) {
-        class View {
-            constructor(rootElement, world) {
-                this.world = world;
-                this.rootElement = rootElement;
-                this.clearHtmlElement(this.rootElement);
-                this.worldAttributeList = world.getWorldAttributeList();
-                this.itemListService = world.getItemListService();
-                this.processListService = world.getProcessListService();
-                this.clientListService = world.getClientListService();
-                this.isStarted = false;
-            }
-            setClientId(clientId) {
-                this.clientId = clientId;
-            }
-            clearHtmlElement(element) {
-                while (element.firstChild) {
-                    element.removeChild(element.firstChild);
-                }
-            }
-            draw() {
-                if (this.isStarted) {
-                    this.refresh();
-                    requestAnimationFrame(this.draw.bind(this));
-                }
-            }
-            start() {
-                this.isStarted = true;
-                this.draw();
-            }
-            stop() {
-                this.isStarted = false;
-            }
-        }
-        Core.View = View;
-    })(Core = Estella.Core || (Estella.Core = {}));
-})(Estella || (Estella = {}));
-var Estella;
-(function (Estella) {
-    var Core;
-    (function (Core) {
-        class WebSocketGameClient {
-            constructor(socket, sid, clientAction, engine) {
-                this.engine = engine;
-                this.socket = socket;
-                this.clientAction = clientAction;
-                this.sid = sid;
-                this.clientAction.setOnAction(this.onClientAction.bind(this));
-                this.init();
-            }
-            getClientId() {
-                return this.clientId;
-            }
-            getEngine() {
-                return this.engine;
-            }
-            setOnConnected(handler) {
-                this.onConnectedHandler = handler;
-            }
-            commandInitializator(attr) {
-                return new Core.Command(new Core.AttributeListArray(), attr);
-            }
-            init() {
-                this.socket.onopen = this.onOpen.bind(this);
-                this.socket.onmessage = this.onMessage.bind(this);
-                this.socket.onclose = this.onClose.bind(this);
-                this.socket.onerror = this.onError.bind(this);
-            }
-            onClientAction(clientAction) {
-                let commandList = clientAction.getCommandKeyValuePairList();
-                clientAction.clear();
-                var message = new Core.ClientServerMessageCommandList();
-                message.setCommandList(commandList);
-                this.sendMessage(message);
-            }
-            onOpen(ev) {
-            }
-            onMessage(ev) {
-                let message = JSON.parse(ev.data);
-                this.processServerMessage(message);
-            }
-            processServerMessage(attr) {
-                let message = this.engine.getWorld().getEntityFactory().restore(attr, Core.ClientServerMessage);
-                switch (message.getType()) {
-                    case Core.ClientServerMessageRequestAuthentication.type:
-                        this.sendAuthentication();
-                        break;
-                    case Core.ClientServerMessageInit.type:
-                        this.processInit(message);
-                        break;
-                    case Core.ClientServerMessageStep.type:
-                        this.processStep(message);
-                        break;
-                    case Core.ClientServerMessageStepList.type:
-                        this.processStepList(message);
-                        break;
-                    case Core.ClientServerMessageWorldFullInfo.type:
-                        this.processWorldFullInfo(message);
-                        break;
-                }
-            }
-            sendAuthentication() {
-                let message = new Core.ClientServerMessageResponseAuthentication();
-                message.setSID(this.sid);
-                this.sendMessage(message);
-            }
-            processStep(message) {
-                let commandListAttr = message.getCommandList();
-                let commandList = this.engine.getWorld().getEntityFactory().restoreList(commandListAttr, Core.Command);
-                this.engine.getCommandListService().setCommandList(commandList);
-                this.engine.update();
-            }
-            processStepList(message) {
-                var stepListAttr = message.getStepList();
-                var stepList = this.engine.getWorld().getEntityFactory().restoreList(stepListAttr, Core.ClientServerMessageStep);
-                for (var step of stepList) {
-                    this.processStep(step);
-                }
-            }
-            processWorldFullInfo(message) {
-                let world = this.engine.getWorld();
-                world.getWorldAttributeList().setList(message.getWorldAttributeList(), true);
-                let itemList = world.getEntityFactory().restoreList(message.getItemListService(), Core.Item);
-                world.getItemListService().setList(itemList, true);
-                let processList = world.getEntityFactory().restoreList(message.getProcessListService(), Core.Process);
-                world.getProcessListService().setList(processList, true);
-                let clientList = world.getEntityFactory().restoreList(message.getClientListService(), Core.Client);
-                world.getClientListService().setList(clientList, true);
-            }
-            processInit(message) {
-                this.clientId = message.getClientId();
-                if (this.onConnectedHandler) {
-                    this.onConnectedHandler(this);
-                }
-            }
-            onClose(ev) {
-            }
-            onError(ev) {
-            }
-            sendMessage(message) {
-                this.socket.send(JSON.stringify(message.getList()));
-            }
-        }
-        Core.WebSocketGameClient = WebSocketGameClient;
     })(Core = Estella.Core || (Estella.Core = {}));
 })(Estella || (Estella = {}));

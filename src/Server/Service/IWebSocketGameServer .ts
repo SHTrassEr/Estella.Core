@@ -1,6 +1,13 @@
-﻿namespace Estella.Core {
+﻿namespace Estella.Core.Server {
 
     export interface IWebSocketGameServer {
-        start(): void;
+
+        addClient(client: IWebSocketClient);
+
+        isFull(): boolean;
+        getMaxClientCount(): number;
+        getClientCount(): number;
+
+        getModuleName(): string;
     }
 }
